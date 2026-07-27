@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Remix: Remix: Visor de Planes Contables",
+  "description": "Explorador de fichas técnicas de planes de suscripción de UpConta, comparador de módulos y cotizador interactivo con simulador de precios para facturación, ERP y contadores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

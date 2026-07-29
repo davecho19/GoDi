@@ -671,16 +671,16 @@ export function AdminModuleMockups({ moduleName }: MockupsProps) {
                   <Lock className="w-3.5 h-3.5" />
                   <span>Entorno Oficial <span className="text-orange-400 font-bold">Up</span>Conta</span>
                 </div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/30">
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Aliado Estratégico de GoDi S.A.S.</span>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-bold border border-orange-400/30">
+                  <ShieldCheck className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Sistema Oficial & Certificado</span>
                 </div>
               </div>
               <h3 className="text-xl md:text-2xl font-black text-white tracking-tight">
-                Conoce la herramienta contable <span className="text-orange-400 font-black">Up</span>Conta que entregamos en GoDi S.A.S.
+                Conoce la herramienta contable y ERP <span className="text-orange-400 font-black">Up</span>Conta
               </h3>
               <p className="text-xs md:text-sm text-slate-300 max-w-xl leading-relaxed">
-                GoDi S.A.S. trabaja en conjunto con <strong><span className="text-orange-400 font-bold">Up</span>Conta</strong> para brindarte acceso al sistema contable líder, garantizando soporte, actualización constante y soluciones adaptadas a tu empresa.
+                <strong><span className="text-orange-400 font-bold">Up</span>Conta</strong> te brinda acceso al sistema contable líder en Ecuador, garantizando soporte especializado, actualización constante ante el SRI y soluciones adaptadas a la medida de tu empresa.
               </p>
             </div>
 

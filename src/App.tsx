@@ -12,6 +12,7 @@ import {
   Bookmark, 
   Briefcase, 
   Check,
+  Copy,
   AlertCircle,
   Database,
   ArrowRight,
@@ -42,7 +43,10 @@ import {
   Award,
   Lock,
   ShieldCheck,
-  Zap
+  Zap,
+  Flame,
+  BarChart3,
+  Landmark
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -62,11 +66,16 @@ import {
 import { jsPDF } from "jspdf";
 import { AdminModuleMockups } from "./components/AdminModuleMockups";
 import { ColorPickerDialog } from "./components/ColorPickerDialog";
-import { GodiLogo } from "./components/GodiLogo";
+import { DynamicBrandLogo, UpContaLogo, AnfLogo, CoBrandLogo } from "./components/GodiLogo";
+import { VentasModule } from "./components/VentasModule";
+import { ContadorModule } from "./components/ContadorModule";
+import { ComisionModule } from "./components/ComisionModule";
+import { DashboardModule } from "./components/DashboardModule";
+import { UpContaMascot } from "./components/UpContaMascot";
 
 export default function App() {
-  // Main Tab State: "plan", "explorador", "simulador", "firmas"
-  const [activeTab, setActiveTab] = useState<"plan" | "explorador" | "simulador" | "firmas">("plan");
+  // Main Tab State: "plan", "explorador", "simulador", "firmas", "contador", "comision"
+  const [activeTab, setActiveTab] = useState<"plan" | "explorador" | "simulador" | "firmas" | "contador" | "comision">("plan");
 
   // Category tab state
   const [tipoPlan, setTipoPlan] = useState<"facturacion" | "erp" | "contador">("facturacion");
@@ -132,8 +141,298 @@ export default function App() {
 
   // State for Firmas Electrónicas Tab Widget
   const [firmaTypeSelect, setFirmaTypeSelect] = useState<string>("PERSONA NATURAL");
-  const [firmaVigenciaSelect, setFirmaVigenciaSelect] = useState<string>("1 AÑO");
+  const [selectedVigencias, setSelectedVigencias] = useState<string[]>(["2 AÑOS"]);
+  const firmaVigenciaSelect = selectedVigencias[0] || "1 AÑO";
   const [firmaQtySelect, setFirmaQtySelect] = useState<number>(1);
+
+  const handleToggleVigencia = (v: string) => {
+    if (selectedVigencias.includes(v)) {
+      if (selectedVigencias.length > 1) {
+        setSelectedVigencias(selectedVigencias.filter(item => item !== v));
+      } else {
+        setSelectedVigencias([v]);
+      }
+    } else {
+      if (selectedVigencias.length === 1) {
+        setSelectedVigencias([...selectedVigencias, v]);
+      } else {
+        setSelectedVigencias([selectedVigencias[1] || selectedVigencias[0], v]);
+      }
+    }
+  };
+  const [copiedRequirements, setCopiedRequirements] = useState<boolean>(false);
+  const [copiedBankText, setCopiedBankText] = useState<boolean>(false);
+  const [copiedBankImage, setCopiedBankImage] = useState<boolean>(false);
+  const [copiedUpContaBankText, setCopiedUpContaBankText] = useState<boolean>(false);
+  const [copiedUpContaBankImage, setCopiedUpContaBankImage] = useState<boolean>(false);
+  const [copiedPitch, setCopiedPitch] = useState<boolean>(false);
+
+  const handleCopyRequirements = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedRequirements(true);
+    setTimeout(() => setCopiedRequirements(false), 2500);
+  };
+
+  const handleCopyPitch = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedPitch(true);
+    setTimeout(() => setCopiedPitch(false), 2500);
+  };
+
+  const handleCopyBankText = () => {
+    const bankText = `🏦 *DATOS BANCARIOS OFICIALES PARA TRANSFERENCIA* 🏦\n\n• *Razón Social:* ANFAC AUTORIDAD DE CERTIFICACIÓN ECUADOR C.A.\n• *RUC:* 1792601215001\n• *Banco:* Banco Internacional\n• *Tipo de Cuenta:* Cuenta Corriente\n• *Número de Cuenta:* 0700626089\n• *Correo:* info@anf.ac\n• *Teléfono:* 02 3826877\n• *Dirección:* Av. 12 de Octubre N24-739 y av. Colón. Edif. Torre Boreal, Torre A, Piso 6 Of. 603\n\n📌 *Por favor envíanos el comprobante de transferencia a este chat para procesar tu firma de inmediato.*`;
+    navigator.clipboard.writeText(bankText);
+    setCopiedBankText(true);
+    setTimeout(() => setCopiedBankText(false), 2500);
+  };
+
+  const handleCopyBankImage = async () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 850;
+      canvas.height = 420;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        handleCopyBankText();
+        return;
+      }
+
+      // Card Background
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.roundRect(0, 0, 850, 420, 16);
+      ctx.fill();
+
+      // Border (Yellow/Gold)
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#eab308";
+      ctx.stroke();
+
+      // Header Banner (Dark Blue)
+      ctx.fillStyle = "#0B2545";
+      ctx.beginPath();
+      ctx.roundRect(0, 0, 850, 70, [16, 16, 0, 0]);
+      ctx.fill();
+
+      ctx.fillStyle = "#f59e0b";
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("DATOS PARA PAGO - DEPÓSITO O TRANSFERENCIA", 35, 42);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("ANF AC", 815, 42);
+
+      // Details (Full width layout starting at X=45)
+      ctx.textAlign = "left";
+      const startX = 45;
+      let currY = 110;
+
+      ctx.fillStyle = "#ca8a04";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("▶ Razón Social:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("ANFAC AUTORIDAD DE CERTIFICACIÓN ECUADOR C.A.", startX + 155, currY);
+
+      currY += 38;
+      ctx.fillStyle = "#ca8a04";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("▶ RUC:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("1792601215001", startX + 80, currY);
+
+      currY += 38;
+      ctx.fillStyle = "#ca8a04";
+      ctx.fillText("▶ Banco:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("Banco Internacional", startX + 100, currY);
+
+      currY += 38;
+      ctx.fillStyle = "#ca8a04";
+      ctx.fillText("▶ Tipo de cuenta:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("Cuenta Corriente", startX + 175, currY);
+
+      currY += 38;
+      ctx.fillStyle = "#ca8a04";
+      ctx.fillText("▶ Número de Cuenta:", startX, currY);
+      ctx.fillStyle = "#0284c7";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText("0700626089", startX + 200, currY);
+
+      currY += 38;
+      ctx.fillStyle = "#ca8a04";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("▶ Correo electrónico:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("info@anf.ac", startX + 200, currY);
+
+      currY += 38;
+      ctx.fillStyle = "#ca8a04";
+      ctx.fillText("▶ Teléfono:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("02 3826877", startX + 110, currY);
+
+      currY += 38;
+      ctx.fillStyle = "#ca8a04";
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillText("▶ Dirección:", startX, currY);
+      ctx.fillStyle = "#334155";
+      ctx.font = "14px sans-serif";
+      ctx.fillText("Av. 12 de Octubre N24-739 y av. Colón. Edif. Torre Boreal, Torre A, Piso 6 Of. 603", startX + 110, currY);
+
+      // Bottom Bar (Dark Blue with Yellow text)
+      ctx.fillStyle = "#0B2545";
+      ctx.fillRect(0, 380, 850, 40);
+      ctx.fillStyle = "#f59e0b";
+      ctx.font = "bold 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("ANFAC AUTORIDAD DE CERTIFICACIÓN ECUADOR C.A. • www.anf.ac", 425, 405);
+
+      canvas.toBlob(async (blob) => {
+        if (blob && navigator.clipboard && window.ClipboardItem) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ "image/png": blob })
+            ]);
+            setCopiedBankImage(true);
+            setTimeout(() => setCopiedBankImage(false), 2500);
+          } catch {
+            handleCopyBankText();
+          }
+        } else {
+          handleCopyBankText();
+        }
+      });
+    } catch {
+      handleCopyBankText();
+    }
+  };
+
+  const handleCopyUpContaBankText = () => {
+    const bankText = `🏦 *DATOS BANCARIOS OFICIALES UPCONTA S.A.S.* 🏦\n\n• *Razón Social:* UPCONTA S.A.S.\n• *RUC:* 1793221216001\n• *Banco:* Banco Pichincha\n• *Tipo de Cuenta:* Ahorros\n• *Número de Cuenta:* 2212935613\n• *Correo:* tesoreria@upconta.com\n• *Teléfono:* 02 382 6772\n• *Sitio Web:* www.upconta.com\n\n📌 *Por favor envíanos el comprobante de pago a este chat para procesar tu activación de inmediato.*`;
+    navigator.clipboard.writeText(bankText);
+    setCopiedUpContaBankText(true);
+    setTimeout(() => setCopiedUpContaBankText(false), 2500);
+  };
+
+  const handleCopyUpContaBankImage = async () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 850;
+      canvas.height = 420;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        handleCopyUpContaBankText();
+        return;
+      }
+
+      // Card Background
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.roundRect(0, 0, 850, 420, 16);
+      ctx.fill();
+
+      // Border
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#f97316";
+      ctx.stroke();
+
+      // Header Banner
+      ctx.fillStyle = "#0B2545";
+      ctx.beginPath();
+      ctx.roundRect(0, 0, 850, 70, [16, 16, 0, 0]);
+      ctx.fill();
+
+      ctx.fillStyle = "#f97316";
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("DATOS PARA PAGO - DEPÓSITO O TRANSFERENCIA", 35, 42);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("UPCONTA S.A.S.", 815, 42);
+
+      // Details (Full width layout starting at X=45)
+      ctx.textAlign = "left";
+      const startX = 45;
+      let currY = 115;
+
+      ctx.fillStyle = "#ea580c";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("▶ Razón Social:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("UPCONTA S.A.S.", startX + 155, currY);
+
+      currY += 40;
+      ctx.fillStyle = "#ea580c";
+      ctx.fillText("▶ RUC:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("1793221216001", startX + 80, currY);
+
+      currY += 40;
+      ctx.fillStyle = "#ea580c";
+      ctx.fillText("▶ Banco:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("Banco Pichincha", startX + 100, currY);
+
+      currY += 40;
+      ctx.fillStyle = "#ea580c";
+      ctx.fillText("▶ Tipo de cuenta:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("Ahorros", startX + 175, currY);
+
+      currY += 40;
+      ctx.fillStyle = "#ea580c";
+      ctx.fillText("▶ Número de Cuenta:", startX, currY);
+      ctx.fillStyle = "#0284c7";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText("2212935613", startX + 200, currY);
+
+      currY += 40;
+      ctx.fillStyle = "#ea580c";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("▶ Correo electrónico:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("tesoreria@upconta.com", startX + 200, currY);
+
+      currY += 40;
+      ctx.fillStyle = "#ea580c";
+      ctx.fillText("▶ Teléfono:", startX, currY);
+      ctx.fillStyle = "#0B2545";
+      ctx.fillText("02 382 6772", startX + 110, currY);
+
+      // Bottom Bar
+      ctx.fillStyle = "#0B2545";
+      ctx.fillRect(0, 380, 850, 40);
+      ctx.fillStyle = "#f97316";
+      ctx.font = "bold 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("UPCONTA S.A.S. • www.upconta.com", 425, 405);
+
+      canvas.toBlob(async (blob) => {
+        if (blob && navigator.clipboard && window.ClipboardItem) {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ "image/png": blob })
+            ]);
+            setCopiedUpContaBankImage(true);
+            setTimeout(() => setCopiedUpContaBankImage(false), 2500);
+          } catch {
+            handleCopyUpContaBankText();
+          }
+        } else {
+          handleCopyUpContaBankText();
+        }
+      });
+    } catch {
+      handleCopyUpContaBankText();
+    }
+  };
 
   const handleAddSignatureDirect = (tipo: string, vigencia: string, precio: number, qty: number = 1) => {
     const existingIndex = selectedSignatures.findIndex(s => s.tipo === tipo && s.vigencia === vigencia);
@@ -155,7 +454,7 @@ export default function App() {
 
   const [selectedProposalPlans, setSelectedProposalPlans] = useState<Array<{
     id: string;
-    tipoPlan: "facturacion" | "erp" | "contador";
+    tipoPlan: "facturacion" | "erp" | "contador" | "cloud";
     nombre: string;
     precioBase: number;
     precioPersonalizado: number | null;
@@ -502,6 +801,11 @@ export default function App() {
     const C_WHITE: [number, number, number] = [255, 255, 255];
     const C_BORDER: [number, number, number] = [180, 198, 211];
 
+    // Compute contrast for dark vs light header fills to guarantee 100% legibility
+    const primaryLuma = 0.299 * C_PRIMARY[0] + 0.587 * C_PRIMARY[1] + 0.114 * C_PRIMARY[2];
+    const C_HEADER_TEXT: [number, number, number] = primaryLuma < 165 ? [255, 255, 255] : [15, 23, 42];
+    const C_BANNER_PRICE: [number, number, number] = primaryLuma < 165 ? [255, 255, 255] : [11, 37, 69];
+
     // Frame/Border & Background Drawing helper
     const drawPageStructure = () => {
       // Clean background
@@ -661,7 +965,7 @@ export default function App() {
       pdf.setFillColor(...C_PRIMARY);
       pdf.setDrawColor(...C_PRIMARY);
       pdf.rect(colX, tableY, w, 7, "FD");
-      pdf.setTextColor(...C_WHITE);
+      pdf.setTextColor(...C_HEADER_TEXT);
       pdf.text(colTitles[idx], colX + w / 2, tableY + 4.5, { align: "center" });
       colX += w;
     });
@@ -808,7 +1112,7 @@ export default function App() {
     pdf.rect(boxX + 0.2, boxY + 0.2, boxW - 0.4, 7.5, "F");
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8.5);
-    pdf.setTextColor(...C_WHITE);
+    pdf.setTextColor(...C_HEADER_TEXT);
     pdf.text("RESUMEN DE INVERSIÓN", boxX + boxW / 2, boxY + 5.2, { align: "center" });
 
     // Financial line items inside box
@@ -856,12 +1160,12 @@ export default function App() {
     pdf.rect(boxX + 0.2, tableY - 10, boxW - 0.4, 9.8, "F");
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
-    pdf.setTextColor(...C_WHITE);
+    pdf.setTextColor(...C_HEADER_TEXT);
     pdf.text("TOTAL ESTIMADO USD", boxX + 4, tableY - 4);
     
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(11);
-    pdf.setTextColor(...C_SECONDARY);
+    pdf.setTextColor(...C_BANNER_PRICE);
     pdf.text(`$${grandTotal.toFixed(2)}`, boxX + boxW - 4, tableY - 4, { align: "right" });
 
     // 6. Client Notes block if present (rendered as full width framed box with cyan border & cream background matching layout)
@@ -1067,7 +1371,7 @@ export default function App() {
       pdf.rect(x + 0.2, cardY + 0.2, colW - 0.4, 6.5, "F");
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(7.5);
-      pdf.setTextColor(...C_WHITE);
+      pdf.setTextColor(...C_HEADER_TEXT);
       pdf.text(`MÓDULO ${modName}`, x + colW / 2, cardY + 4.5, { align: "center" });
 
       // Submodules list inside card
@@ -1118,129 +1422,173 @@ export default function App() {
     <div id="app-root" className="min-h-screen bg-[#f4f6f9] text-slate-800 font-sans selection:bg-[#0B2545]/20 antialiased pb-20">
       
       {/* Top Header Navigation */}
-      <header id="app-header" className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs py-2.5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap lg:flex-nowrap justify-between items-center gap-4 lg:gap-6">
+      <header id="app-header" className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-2.5">
           
-          {/* Logo & Platform Name */}
-          <div className="flex items-center gap-4 shrink-0">
-            <GodiLogo size="lg" className="shrink-0" />
-            <div className="hidden sm:block h-9 w-[1px] bg-slate-200"></div>
-            <div className="hidden sm:block">
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-[#0B2545] animate-pulse"></span>
-                <span className="uppercase tracking-widest text-[9.5px] font-black text-[#0B2545]">
-                  Plataforma Empresarial GoDi
-                </span>
-              </div>
-              <h1 className="text-xs font-bold tracking-tight text-slate-600 mt-0.5">
-                Fichas Técnicas & Cotizador de Planes
-              </h1>
+          {/* Top Row: Centered GoDi Logo & Platform Name in a Single Line */}
+          <div className="flex flex-col items-center justify-center text-center gap-2 py-1 relative">
+            
+            {/* Centered GoDi Logo */}
+            <div className="flex items-center justify-center">
+              <DynamicBrandLogo activeTab={activeTab} size="xl" className="mx-auto drop-shadow-xs" />
             </div>
-          </div>
 
-          {/* Main static navigation tabs inside header */}
-          <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-2xs shrink-0 flex-wrap sm:flex-nowrap justify-center">
-            <button
-              onClick={() => setActiveTab("plan")}
-              className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === "plan"
-                  ? "bg-[#0B2545] text-white shadow-sm font-extrabold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <FileText className="w-4 h-4 text-blue-400" />
-              <span>Plan</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("firmas")}
-              className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === "firmas"
-                  ? "bg-[#0B2545] text-white shadow-sm font-extrabold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <FileCheck className="w-4 h-4 text-orange-400" />
-              <span>Firmas Electrónicas</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("explorador")}
-              className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === "explorador"
-                  ? "bg-[#0B2545] text-white shadow-sm font-extrabold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Sliders className="w-4 h-4 text-purple-400" />
-              <span>Explorar Módulos</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("simulador")}
-              className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === "simulador"
-                  ? "bg-[#0B2545] text-white shadow-sm font-extrabold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Calculator className="w-4 h-4 text-emerald-400" />
-              <span>Simulador</span>
-            </button>
-          </div>
-
-          {/* Quick billing cycle toggle */}
-          {tipoPlan === "erp" ? (
-            <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-2xs shrink-0">
-              <button
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  billingCycle === "monthly" 
-                    ? "bg-[#0B2545] text-white shadow" 
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Pago Mensual
-              </button>
-              <button
-                onClick={() => setBillingCycle("annual")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  billingCycle === "annual" 
-                    ? "bg-[#0B2545] text-white shadow" 
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <span>Pago Anual</span>
-                <span className="bg-blue-100 text-[#0B2545] border border-blue-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                  Anual
-                </span>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl text-xs font-bold text-[#0B2545] shadow-2xs shrink-0">
-              <span>Suscripción Anual</span>
-            </div>
-          )}
-        </div>
-
-        {/* Garantías ribbon underneath the tabs row inside the header */}
-        <div className="bg-[#0B2545] text-white py-2.5 px-6 border-t border-slate-800">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-xs text-slate-200 font-medium">
-            <div className="flex items-center gap-2 flex-wrap justify-center text-center md:text-left">
-              <span className="bg-slate-700 text-white border border-slate-500 text-[9.5px] font-black px-2 py-0.5 rounded tracking-wide uppercase shrink-0">
-                Garantía GODi
+            {/* Single Line Header Description */}
+            <div className="flex items-center justify-center flex-wrap gap-2 text-center text-[#0B2545] py-0.5">
+              <span className="flex items-center gap-1.5 font-black text-xs sm:text-sm uppercase tracking-wider text-[#0B2545]">
+                <span className={`h-2 w-2 rounded-full animate-pulse ${
+                  activeTab === "firmas" ? "bg-amber-500" : "bg-orange-500"
+                }`}></span>
+                Plataforma Empresarial GoDi
               </span>
-              <span className="text-white font-extrabold shrink-0">Cumplimiento Tributario SRI:</span>
-              <span className="text-slate-200 text-[11px] leading-snug">Facturación electrónica autorizada, formatos XML oficiales y actualización normativa continua.</span>
+              <span className="text-slate-300 font-bold hidden sm:inline">•</span>
+              <span className="font-semibold text-xs text-slate-600">
+                {activeTab === "firmas"
+                  ? "Certificación Digital & Firmas SRI"
+                  : activeTab === "simulador"
+                  ? "Simulador Interactivo de Precios"
+                  : activeTab === "contador"
+                  ? "Calculadora Entorno GoDi"
+                  : activeTab === "comision"
+                  ? "Gestión de Comisiones Comercial"
+                  : "Fichas Técnicas & Cotizador"}
+              </span>
             </div>
-            <div className="flex items-center gap-4 text-slate-300 font-bold flex-wrap justify-center shrink-0">
-              <div className="flex items-center gap-1.5 text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                <span>Soporte e Implantación Chat</span>
+
+            {/* Quick billing cycle toggle - absolute positioned on right for wide screens */}
+            {activeTab === "plan" && tipoPlan === "erp" && (
+              <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs shrink-0 mt-2 sm:mt-0">
+                <button
+                  onClick={() => setBillingCycle("monthly")}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    billingCycle === "monthly" 
+                      ? "bg-[#0B2545] text-white shadow" 
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Pago Mensual
+                </button>
+                <button
+                  onClick={() => setBillingCycle("annual")}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                    billingCycle === "annual" 
+                      ? "bg-[#0B2545] text-white shadow" 
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span>Pago Anual</span>
+                  <span className="bg-blue-100 text-[#0B2545] border border-blue-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                    Anual
+                  </span>
+                </button>
               </div>
-              <div className="flex items-center gap-1.5 text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                <span>Respaldos Diarios en la Nube</span>
-              </div>
-            </div>
+            )}
           </div>
+
+          {/* Promociones Fixed Banner - Directly under Logo */}
+          <div className="w-full bg-gradient-to-r from-[#0B2545] via-[#003566] to-[#0B2545] text-white py-2.5 px-4 rounded-xl border border-amber-400/40 shadow-md flex items-center justify-center gap-3">
+            <span className="bg-amber-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shrink-0">
+              <Flame className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
+              <span>PROMOCIÓN</span>
+            </span>
+            <span className="text-sm sm:text-base font-black tracking-wide text-white drop-shadow-xs text-center">
+              Aprovecha nuestras promociones en firmas y facturación
+            </span>
+          </div>
+
+          {/* Underneath Logo & Banner: INFO group on Left, COMERCIAL group on Right */}
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+            
+            {/* GROUP 1: INFO */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 shadow-2xs gap-1">
+              <div className="px-2.5 py-1 bg-blue-500/10 text-blue-700 text-[10px] font-black uppercase tracking-wider rounded-lg border border-blue-200/50 flex items-center gap-1 shrink-0 select-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                <span>INFO</span>
+              </div>
+
+              <button
+                onClick={() => setActiveTab("plan")}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === "plan"
+                    ? "bg-[#0B2545] text-white shadow-xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-blue-400" />
+                <span>Plan</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("firmas")}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === "firmas"
+                    ? "bg-[#0B2545] text-white shadow-xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <FileCheck className="w-3.5 h-3.5 text-orange-400" />
+                <span>Firmas</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("explorador")}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === "explorador"
+                    ? "bg-[#0B2545] text-white shadow-xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <Sliders className="w-3.5 h-3.5 text-purple-400" />
+                <span>Explorador</span>
+              </button>
+            </div>
+
+            {/* GROUP 2: COMERCIAL */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 shadow-2xs gap-1">
+              <div className="px-2.5 py-1 bg-emerald-500/10 text-emerald-700 text-[10px] font-black uppercase tracking-wider rounded-lg border border-emerald-200/50 flex items-center gap-1 shrink-0 select-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>COMERCIAL</span>
+              </div>
+
+              <button
+                onClick={() => setActiveTab("simulador")}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === "simulador"
+                    ? "bg-[#0B2545] text-white shadow-xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <Calculator className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Simulador</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("contador")}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === "contador"
+                    ? "bg-[#0B2545] text-white shadow-xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5 text-amber-400" />
+                <span>Contador</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("comision")}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === "comision"
+                    ? "bg-[#0B2545] text-white shadow-xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Comisión</span>
+              </button>
+            </div>
+
+          </div>
+
         </div>
       </header>
 
@@ -1264,14 +1612,14 @@ export default function App() {
             </div>
             
             {/* Quick stats indicators */}
-            <div className="flex gap-4 text-xs font-medium text-slate-500">
+            <div className="flex gap-4 text-xs font-medium text-slate-500 flex-wrap">
               <div>Facturación: <span className="text-[#0B2545] font-bold">8 planes</span></div>
               <div className="border-l border-slate-200 pl-4">ERP: <span className="text-[#0B2545] font-bold">3 planes</span></div>
               <div className="border-l border-slate-200 pl-4">Contador: <span className="text-[#0B2545] font-bold">6 planes</span></div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
             
             {/* Facturacion Tab */}
             <button
@@ -1286,15 +1634,12 @@ export default function App() {
                 <div className="p-2 bg-[#0B2545]/10 border border-[#0B2545]/20 text-[#0B2545] rounded-lg">
                   <FileText className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-bold uppercase">Lite-Mesa</span>
+                <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-bold uppercase">Anual</span>
               </div>
               <h3 className="text-sm font-bold text-slate-800 mt-3 flex items-center gap-1.5">
                 Facturación Electrónica
                 {tipoPlan === "facturacion" && <span className="w-1.5 h-1.5 rounded-full bg-[#0B2545] animate-ping"></span>}
               </h3>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Planes Up Light, Up Base, Power y Plus orientados a emisión fiscal ágil de comprobantes.
-              </p>
             </button>
 
             {/* ERP Tab */}
@@ -1316,9 +1661,6 @@ export default function App() {
                 ERP Administrativo Completo
                 {tipoPlan === "erp" && <span className="w-1.5 h-1.5 rounded-full bg-[#0B2545] animate-ping"></span>}
               </h3>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                UpConta Start, Plus y Premium con inventarios multibodega, contabilidad integrada y nómina.
-              </p>
             </button>
 
             {/* Contador Tab */}
@@ -1334,15 +1676,12 @@ export default function App() {
                 <div className="p-2 bg-[#0B2545]/10 border border-[#0B2545]/20 text-[#0B2545] rounded-lg">
                   <Users className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-bold uppercase">Multi-RUC</span>
+                <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded text-slate-600 font-bold uppercase">Anual Multi-RUC</span>
               </div>
               <h3 className="text-sm font-bold text-slate-800 mt-3 flex items-center gap-1.5">
                 Planes para Contadores
                 {tipoPlan === "contador" && <span className="w-1.5 h-1.5 rounded-full bg-[#0B2545] animate-ping"></span>}
               </h3>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Suscripciones por volumen de empresas, Tax Ilimitado y Socio Estratégico Multiusuario.
-              </p>
             </button>
 
           </div>
@@ -1362,11 +1701,10 @@ export default function App() {
               </span>
             </div>
 
-            <div className="space-y-3 max-h-[640px] overflow-y-auto pr-2 scrollbar-thin">
+            <div className="space-y-2">
               <AnimatePresence mode="popLayout">
                 {activePlanList.map((p) => {
                   const isSelected = selectedPlanName === p.nombre;
-                  const metrics = extractQuickMetrics(p.modulos);
                   
                   let cyclePrice = p.precio;
                   let itemCycleLabel = "/mes";
@@ -1380,7 +1718,7 @@ export default function App() {
                     }
                   } else {
                     cyclePrice = p.precio;
-                    itemCycleLabel = "/mes";
+                    itemCycleLabel = "/año (Anual)";
                   }
 
                   return (
@@ -1388,7 +1726,7 @@ export default function App() {
                       key={p.nombre}
                       layoutId={`plan-card-${p.nombre}`}
                       onClick={() => setSelectedPlanName(p.nombre)}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
                         isSelected
                           ? "bg-white border-[#0B2545] shadow-md ring-1 ring-[#0B2545]"
                           : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
@@ -1401,40 +1739,24 @@ export default function App() {
 
                       <div className="flex justify-between items-start gap-2">
                         <div>
-                          <h4 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                          <h4 className="text-sm font-bold tracking-tight flex items-center gap-2 text-slate-800">
                             {p.nombre}
                             {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-[#0B2545]" />}
                           </h4>
-                          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                            Tier: {p.tier.replace("_", " ")}
+                          {(tipoPlan === "facturacion" || tipoPlan === "contador") && (
+                            <span className="inline-block text-[9px] bg-blue-50 text-blue-900 font-extrabold px-1.5 py-0.5 rounded mt-1 border border-blue-200">
+                              Pago Anual
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right flex items-baseline gap-1 shrink-0">
+                          <span className="text-sm font-extrabold text-slate-900">
+                            ${cyclePrice.toFixed(2)}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-500">
+                            {itemCycleLabel}
                           </span>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-extrabold text-slate-900">
-                            ${cyclePrice.toFixed(2)}
-                          </div>
-                          <div className="text-[9px] text-slate-500 font-bold">
-                            {itemCycleLabel}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quick specifications bullets */}
-                      <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-[10px] text-slate-600">
-                        <div className="flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{metrics.usuarios}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{metrics.comprobantes}</span>
-                        </div>
-                        {metrics.empresas && (
-                          <div className="flex items-center gap-1.5 col-span-2 text-[#0B2545] font-bold">
-                            <Building2 className="w-3.5 h-3.5 shrink-0 text-[#0B2545]" />
-                            <span>{metrics.empresas}</span>
-                          </div>
-                        )}
                       </div>
                     </motion.div>
                   );
@@ -1449,18 +1771,18 @@ export default function App() {
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-md">
                 
                 {/* Banner Header */}
-                <div className="p-6 bg-slate-50 border-b border-slate-200 relative">
+                <div className="p-6 border-b relative bg-slate-50 border-slate-200 text-slate-800">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#0B2545]/5 rounded-full blur-2xl pointer-events-none"></div>
                   
                   <div className="flex justify-between items-start gap-4">
                     <div>
-                      <span className="px-2 py-0.5 bg-blue-100 border border-blue-200 text-[#0B2545] text-[10px] font-extrabold rounded-md uppercase">
+                      <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase border bg-blue-100 text-[#0B2545] border-blue-200">
                         {tipoPlan}
                       </span>
-                      <h3 className="text-xl font-black text-slate-850 mt-2 tracking-tight">
+                      <h3 className="text-xl font-black mt-2 tracking-tight text-slate-850">
                         Ficha Técnica: {viewedPlanObj.nombre}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs mt-1 text-slate-500">
                         Estructura modular del plan y catálogo de submódulos normativos habilitados.
                       </p>
                     </div>
@@ -1477,17 +1799,52 @@ export default function App() {
                           return displayPrice.toFixed(2);
                         })()}
                       </div>
-                      <span className="text-xs text-slate-500 font-bold block mt-0.5">
+                      <span className="text-xs font-bold block mt-0.5 text-slate-500">
                         {(() => {
-                          if (tipoPlan === "erp" && billingCycle === "annual") {
-                            return "/año";
+                          if (tipoPlan === "erp") {
+                            return billingCycle === "annual" ? "/año (Pago Anual)" : "/mes";
                           }
-                          return "/mes";
+                          return "/año (Pago Anual)";
                         })()}
                       </span>
                     </div>
                   </div>
                 </div>
+
+                {/* Cloud Specific Detailed Specifications Badge Card */}
+                {tipoPlan === "cloud" && (
+                  <div className="p-5 bg-gradient-to-br from-purple-950/20 via-slate-900/10 to-indigo-950/20 border-b border-purple-200 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-amber-500" />
+                      <span className="text-xs font-black uppercase tracking-wider text-purple-950">
+                        Especificaciones Preferenciales Multiempresa (Cloud IaaS)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                      <div className="bg-white p-2.5 rounded-lg border border-purple-200 shadow-2xs">
+                        <span className="text-[9.5px] font-bold text-slate-500 uppercase block">Empresas / RUCs</span>
+                        <span className="text-xs font-black text-purple-950 block mt-0.5">3 Incluidos</span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-lg border border-purple-200 shadow-2xs">
+                        <span className="text-[9.5px] font-bold text-slate-500 uppercase block">IaaS Dedicado</span>
+                        <span className="text-xs font-black text-emerald-700 block mt-0.5">SI (VPS Exclusivo)</span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-lg border border-purple-200 shadow-2xs">
+                        <span className="text-[9.5px] font-bold text-slate-500 uppercase block">Perfil Comercial</span>
+                        <span className="text-xs font-black text-purple-950 block mt-0.5">Mayor a $1M USD</span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-lg border border-purple-200 shadow-2xs">
+                        <span className="text-[9.5px] font-bold text-slate-500 uppercase block">Capacitación</span>
+                        <span className="text-xs font-black text-purple-950 block mt-0.5">Personalizada 1 a 1</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-900/10 p-3 rounded-lg border border-purple-300/60 text-[11px] text-purple-950 leading-relaxed font-medium">
+                      ✨ <strong>Adicionales Incluidos:</strong> Base de Datos Dedicada + App Móvil + Plugin WooCommerce + Soporte Personalizado Prioritario.
+                    </div>
+                  </div>
+                )}
 
                 {/* Technical stats blocks */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-6 border-b border-slate-200">
@@ -1596,31 +1953,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Quick checkout CTA */}
-                  <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div className="text-xs text-slate-500">
-                      ¿Deseas emitir una cotización para este plan?
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedPlanName(viewedPlanObj.nombre);
-                        handleAddProposalPlan(viewedPlanObj);
-                        setCalcQuantity(1);
-                        setActiveTab("simulador");
-                        setTimeout(() => {
-                          const calculatorSection = document.getElementById("cotizador-seccion");
-                          if (calculatorSection) {
-                            calculatorSection.scrollIntoView({ behavior: "smooth" });
-                          }
-                        }, 50);
-                      }}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-[#0B2545] hover:bg-[#061830] text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Cargar en el Cotizador
-                    </button>
-                  </div>
-
                 </div>
 
               </div>
@@ -1713,86 +2045,18 @@ export default function App() {
         </section>
 
         {/* ==================================== TABS: PLAN END ==================================== */}
-            {/* CTA Banner to the Simulator */}
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center shadow-sm max-w-3xl mx-auto mt-8">
-              <h3 className="text-sm font-bold text-slate-800">¿Quieres cotizar el plan para tus clientes?</h3>
-              <p className="text-xs text-slate-500 mt-1">Usa nuestro simulador interactivo para calcular precios, agregar firmas electrónicas y descargar propuestas en PDF.</p>
-              <button 
-                onClick={() => setActiveTab("simulador")}
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2545] hover:bg-[#061830] text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
-              >
-                <Calculator className="w-4 h-4" />
-                <span>Ir al Simulador de Cotizaciones</span>
-              </button>
-            </div>
           </div>
         )}
 
         {/* ==================================== TABS: EXPLORAR MÓDULOS ==================================== */}
         {activeTab === "explorador" && (
           <div className="space-y-8 animate-fade-in">
-            {/* Strategic Alliance Statement Banner */}
-            <div className="bg-gradient-to-br from-[#0B2545] via-[#123866] to-[#0B2545] text-white border border-blue-900/40 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
-              <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
-              
-              <div className="relative z-10 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 text-xs font-bold border border-blue-400/30">
-                  <Shield className="w-3.5 h-3.5 text-blue-300" />
-                  <span>Alianza Tecnológica & Comercial Oficial</span>
-                </div>
-
-                <div className="space-y-3">
-                  <h2 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2 flex-wrap">
-                    <span>GoDi S.A.S.</span>
-                    <span className="text-blue-300 font-normal text-lg">+</span>
-                    <span><span className="text-orange-400 font-black">Up</span>Conta</span>
-                    <span className="text-xs font-semibold text-blue-200 bg-blue-900/80 border border-blue-700/60 px-2.5 py-0.5 rounded-md ml-1">
-                      Trabajo en Conjunto
-                    </span>
-                  </h2>
-
-                  {/* Unified Alliance & Transparency Statement in one cohesive block */}
-                  <div className="bg-blue-950/60 p-5 rounded-xl border border-blue-800/50 text-xs md:text-sm text-blue-100 leading-relaxed space-y-2.5">
-                    <p>
-                      En <strong>GoDi S.A.S.</strong> trabajamos en conjunto con nuestro aliado estratégico <strong><span className="text-orange-400 font-bold">Up</span>Conta</strong> para la entrega de herramientas contables de alto nivel y la mejora constante adaptada a las necesidades de cada cliente.
-                    </p>
-                    <p className="text-blue-200/90 text-xs md:text-sm pt-2 border-t border-blue-800/40">
-                      <strong>Transparencia y Respaldo Tecnológico:</strong> El sistema contable y de facturación es desarrollado por nuestro aliado oficial <strong><span className="text-orange-400 font-bold">Up</span>Conta</strong>. En <strong>GoDi S.A.S.</strong> ponemos a tu disposición esta potente herramienta junto a nuestra asesoría comercial, implementación personalizada y acompañamiento técnico permanente.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-md">
-              <div className="border-b border-slate-200 pb-5 mb-6">
-                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-[#0B2545]" />
-                  <span>Demostración del Sistema Contable <span className="text-orange-500 font-black">Up</span>Conta</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Accede de forma directa a la plataforma oficial de nuestro aliado <span className="font-semibold text-slate-700"><span className="text-orange-500 font-bold">Up</span>Conta</span> utilizando las credenciales de prueba preconfiguradas.
-                </p>
-              </div>
-
               {/* Directly render the Acceso al Sistema Real mockup full-width */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
                 <AdminModuleMockups moduleName="Acceso al Sistema Real" />
               </div>
             </section>
-
-            {/* CTA Banner to the Simulator */}
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center shadow-sm max-w-3xl mx-auto">
-              <h3 className="text-sm font-bold text-slate-800">¿Quieres cotizar el plan para tus clientes?</h3>
-              <p className="text-xs text-slate-500 mt-1">Usa nuestro simulador interactivo para calcular precios, agregar firmas electrónicas y descargar propuestas en PDF.</p>
-              <button 
-                onClick={() => setActiveTab("simulador")}
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2545] hover:bg-[#061830] text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
-              >
-                <Calculator className="w-4 h-4" />
-                <span>Ir al Simulador de Cotizaciones</span>
-              </button>
-            </div>
           </div>
         )}
 
@@ -2285,7 +2549,7 @@ export default function App() {
 
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {[
-                      { nombre: "Azul GODi Oficial", bg: "#0b2545", title: "#0b2545", sub: "#475569" },
+                      { nombre: "Azul UpConta Oficial", bg: "#0b2545", title: "#0b2545", sub: "#475569" },
                       { nombre: "Azul Profesional", bg: "#0b3c5d", title: "#0b3c5d", sub: "#46505a" },
                       { nombre: "Esmeralda", bg: "#065f46", title: "#065f46", sub: "#475569" },
                       { nombre: "Gris Oscuro Premium", bg: "#1e293b", title: "#1e293b", sub: "#64748b" },
@@ -2347,7 +2611,12 @@ export default function App() {
                       <input
                         type="color"
                         value={pdfBgColor}
-                        onChange={(e) => setPdfBgColor(e.target.value)}
+                        onChange={(e) => {
+                          const newBg = e.target.value;
+                          setPdfBgColor(newBg);
+                          setPdfTitleColor(newBg);
+                          setPdfSubtitleColor("#475569");
+                        }}
                         className="w-8 h-8 rounded-lg bg-white border border-slate-300 cursor-pointer"
                       />
                       <span className="text-[11px] font-mono text-slate-600 uppercase">{pdfBgColor}</span>
@@ -2409,6 +2678,29 @@ export default function App() {
                   </div>
 
                 </div>
+
+                {/* Auto-recommendation Notice & Button */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-xl p-3 flex items-start gap-3 mt-3 shadow-2xs">
+                  <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="font-extrabold text-blue-950">Garantía de Legibilidad Impresa</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPdfTitleColor(pdfBgColor);
+                          setPdfSubtitleColor("#475569");
+                        }}
+                        className="text-[10px] font-bold text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-100/50 px-2 py-0.5 rounded-md border border-blue-200 transition-colors cursor-pointer"
+                      >
+                        ✨ Sincronizar Títulos
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-blue-800 mt-0.5 leading-relaxed">
+                      Al cambiar el fondo de encabezados, el sistema recomienda títulos y subtítulos armónicos. Además, los textos dentro de cajas oscuras y la barra de <strong>TOTAL ESTIMADO</strong> se imprimirán automáticamente con máximo contraste (blanco/dorado) para garantizar nitidez impecable.
+                    </p>
+                  </div>
+                </div>
               </div>
 
             </div>
@@ -2424,7 +2716,7 @@ export default function App() {
 
                 <div className="border-b border-slate-200 pb-4">
                   <span className="text-[9px] font-bold text-slate-500 tracking-wider uppercase block">Resumen de Propuesta</span>
-                  <h4 className="text-sm font-extrabold text-[#0B2545]">GODi VALUATOR</h4>
+                  <h4 className="text-sm font-extrabold text-[#0B2545]">COTIZADOR UPCONTA & ANF</h4>
                   <div className="text-[10px] text-slate-500 mt-1">
                     Emisión: {new Date().toLocaleDateString("es-ES")} • ECUADOR
                   </div>
@@ -2762,387 +3054,883 @@ export default function App() {
 
         {/* ==================================== TABS: FIRMAS ELECTRÓNICAS VIGENTES ==================================== */}
         {activeTab === "firmas" && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Strategic Alliance Banner: GoDi S.A.S. + ANF AC */}
-            <div className="bg-gradient-to-br from-[#0B2545] via-[#123866] to-[#0B2545] text-white border border-blue-900/40 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
-              <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="absolute -left-10 -top-10 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
-
-              <div className="relative z-10 space-y-5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold border border-orange-500/30">
-                    <Award className="w-3.5 h-3.5" />
-                    <span>Certificadora Internacional Acreditada</span>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/30">
-                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                    <span>+20 Años de Trayectoria en Ecuador</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h2 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2.5 flex-wrap">
-                    <span>GoDi S.A.S.</span>
-                    <span className="text-blue-300 font-normal text-lg">+</span>
-                    <span className="bg-white text-[#0B2545] font-black px-3 py-1 rounded-lg border border-slate-200 shadow-md inline-flex items-center text-base tracking-wide">
-                      ANF AC
-                    </span>
-                    <span className="text-xs font-semibold text-blue-200 bg-blue-900/80 border border-blue-700/60 px-2.5 py-1 rounded-md ml-1">
-                      Trabajo en Conjunto
-                    </span>
+          <div className="space-y-6 animate-fade-in">
+            {/* Step 1: Select Type of Signature (4 Category Selector Cards) */}
+            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <FileCheck className="w-5 h-5 text-amber-500" />
+                    <span>1. Elije 1: Selecciona el Tipo de Firma Electrónica</span>
                   </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Selecciona la modalidad acorde al perfil fiscal y tributario de tu cliente.
+                  </p>
+                </div>
+                <span className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full">
+                  Emisión Inmediata ANF AC
+                </span>
+              </div>
 
-                  {/* Unified Alliance & Value Add Statement */}
-                  <div className="bg-blue-950/60 p-5 rounded-xl border border-blue-800/50 text-xs md:text-sm text-blue-100 leading-relaxed space-y-3">
-                    <p>
-                      En <strong>GoDi S.A.S.</strong> trabajamos directamente en conjunto con una certificadora internacional con más de 20 años en el país (<strong className="bg-white text-[#0B2545] px-2 py-0.5 rounded border border-blue-200 font-black">ANF AC</strong>). Te entregamos firmas electrónicas legales y vigentes para el SRI, facturación electrónica y trámites gubernamentales.
-                    </p>
-                    <p className="text-blue-200/90 text-xs md:text-sm pt-2.5 border-t border-blue-800/40">
-                      <strong>Servicios Exclusivos Incluidos:</strong> Adicional a la entrega de tu firma electrónica en formato `.pfx` / `.p12`, te entregamos una <strong>plataforma web para preservar tu archivo</strong> de forma segura en la nube, un módulo para el <strong>cambio de PIN confidencial</strong>, y un <strong>aplicativo móvil oficial</strong> para la firma de documentos en PDF desde cualquier lugar.
-                    </p>
+              {/* 4 Category Selector Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* 1. Persona Natural */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFirmaTypeSelect("PERSONA NATURAL");
+                    if (!FIRMAS_DATA.some(f => f.tipo === "PERSONA NATURAL" && selectedVigencias.includes(f.vigencia))) {
+                      setSelectedVigencias(["1 AÑO"]);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    firmaTypeSelect === "PERSONA NATURAL"
+                      ? "bg-blue-50/90 border-[#0B2545] ring-2 ring-[#0B2545] shadow-sm"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-lg ${firmaTypeSelect === "PERSONA NATURAL" ? "bg-[#0B2545] text-white" : "bg-blue-100 text-[#0B2545]"}`}>
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900">Persona Natural</h3>
+                      <span className="text-[11px] text-slate-500 font-medium block">Sin RUC / Uso Personal</span>
+                    </div>
                   </div>
+                </button>
+
+                {/* 2. Persona Natural con RUC */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFirmaTypeSelect("PERSONA NATURAL RUC");
+                    if (!FIRMAS_DATA.some(f => f.tipo === "PERSONA NATURAL RUC" && selectedVigencias.includes(f.vigencia))) {
+                      setSelectedVigencias(["1 AÑO"]);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    firmaTypeSelect === "PERSONA NATURAL RUC"
+                      ? "bg-orange-50/90 border-orange-500 ring-2 ring-orange-500 shadow-sm"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-lg ${firmaTypeSelect === "PERSONA NATURAL RUC" ? "bg-orange-500 text-white" : "bg-orange-100 text-orange-700"}`}>
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900">Con RUC</h3>
+                      <span className="text-[11px] text-slate-500 font-medium block">Profesionales &amp; Comerciantes</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* 3. Persona Jurídica */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFirmaTypeSelect("PERSONA JURIDICA");
+                    if (!FIRMAS_DATA.some(f => f.tipo === "PERSONA JURIDICA" && selectedVigencias.includes(f.vigencia))) {
+                      setSelectedVigencias(["1 AÑO"]);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    firmaTypeSelect === "PERSONA JURIDICA"
+                      ? "bg-purple-50/90 border-purple-600 ring-2 ring-purple-600 shadow-sm"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-lg ${firmaTypeSelect === "PERSONA JURIDICA" ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"}`}>
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900">Persona Jurídica</h3>
+                      <span className="text-[11px] text-slate-500 font-medium block">Empresas &amp; Reps. Legales</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* 4. Promo Emprende */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFirmaTypeSelect("PROMO EMPRENDE");
+                    if (!FIRMAS_DATA.some(f => f.tipo === "PROMO EMPRENDE" && selectedVigencias.includes(f.vigencia))) {
+                      setSelectedVigencias(["1 AÑO"]);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    firmaTypeSelect === "PROMO EMPRENDE"
+                      ? "bg-amber-50/90 border-amber-500 ring-2 ring-amber-500 shadow-sm"
+                      : "bg-gradient-to-r from-amber-50/60 to-orange-50/60 border-amber-200 hover:border-amber-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-lg ${firmaTypeSelect === "PROMO EMPRENDE" ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-800"}`}>
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900">Promo Emprende</h3>
+                      <span className="text-[11px] text-amber-900 font-semibold block">Firma + Facturación UpConta</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </section>
+
+            {/* Step 2: Vigencias y Precios de la Firma Seleccionada */}
+            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3 flex-wrap gap-2">
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-blue-600" />
+                    <span>2. Vigencia y Precios: {firmaTypeSelect === "PERSONA NATURAL" ? "Persona Natural" : firmaTypeSelect === "PERSONA NATURAL RUC" ? "Persona Natural con RUC" : firmaTypeSelect === "PERSONA JURIDICA" ? "Persona Jurídica" : "Promo Emprende"}</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Selecciona 1 o 2 vigencias para comparar sus costos y generar el argumento de ventas paso a paso.
+                  </p>
+                </div>
+                <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  Valores finales con IVA 15% incluido
+                </span>
+              </div>
+
+              {/* Vigencia Cards Grid */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600 px-1 flex-wrap gap-2">
+                  <span className="flex items-center gap-1.5 text-slate-800 font-extrabold">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>Haz clic en las tarjetas para seleccionar las vigencias a comparar (máx. 2):</span>
+                  </span>
+                  {selectedVigencias.length === 1 && (
+                    <span className="text-[11px] text-amber-800 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 shadow-2xs">
+                      💡 Comparación activa: {selectedVigencias[0]} vs {selectedVigencias[0] === "1 AÑO" ? "2 AÑOS" : "1 AÑO"} (predeterminada)
+                    </span>
+                  )}
                 </div>
 
-                {/* 3 Value Proposition Highlight Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 text-orange-400 font-bold text-xs uppercase tracking-wider">
-                      <Cloud className="w-4 h-4" />
-                      <span>Plataforma de Preservación</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  {FIRMAS_DATA.filter(f => f.tipo === firmaTypeSelect).map((item) => {
+                    const isSelected = selectedVigencias.includes(item.vigencia);
+                    const indexInSelection = selectedVigencias.indexOf(item.vigencia);
+
+                    return (
+                      <button
+                        key={item.vigencia}
+                        type="button"
+                        onClick={() => handleToggleVigencia(item.vigencia)}
+                        className={`p-4 rounded-xl border text-center transition-all cursor-pointer relative flex flex-col justify-between space-y-2 group ${
+                          isSelected
+                            ? indexInSelection === 0
+                              ? "bg-slate-900 text-white border-slate-900 ring-2 ring-amber-400 shadow-md"
+                              : "bg-[#0B2545] text-white border-[#0B2545] ring-2 ring-emerald-400 shadow-md"
+                            : "bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-400 hover:bg-slate-100"
+                        }`}
+                      >
+                        {item.vigencia !== "1 AÑO" && item.vigencia !== "15 DIAS" && !isSelected && (
+                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                            Mayor Ahorro
+                          </span>
+                        )}
+
+                        {isSelected && (
+                          <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 font-black text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1 ${
+                            indexInSelection === 0
+                              ? "bg-amber-400 text-slate-950"
+                              : "bg-emerald-500 text-white"
+                          }`}>
+                            <Check className="w-2.5 h-2.5" />
+                            <span>Opción {indexInSelection + 1}</span>
+                          </span>
+                        )}
+
+                        <div>
+                          <span className={`text-xs font-extrabold uppercase tracking-wider block ${
+                            isSelected ? "text-amber-300" : "text-slate-500"
+                          }`}>
+                            {item.vigencia}
+                          </span>
+                          <div className="text-xl font-black mt-1">
+                            ${item.precio.toFixed(2)}
+                          </div>
+                          <span className={`text-[10px] block font-semibold ${
+                            isSelected ? "text-slate-300" : "text-emerald-600"
+                          }`}>
+                            IVA 15% Incluido
+                          </span>
+                        </div>
+
+                        {/* Comparison selection indicator */}
+                        <div className="pt-2 border-t border-slate-200/20">
+                          <span 
+                            className={`w-full py-1 px-2 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1 ${
+                              isSelected 
+                                ? "bg-amber-400/20 text-amber-300 border border-amber-400/30" 
+                                : "text-slate-400 group-hover:text-slate-600"
+                            }`}
+                          >
+                            <span>{isSelected ? "✓ Comparación Activa" : "Clic para Comparar"}</span>
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* CONTENEDOR DE ARGUMENTO DE VENTA Y REQUISITOS (LADO A LADO CON IGUAL DISTANCIA AL MARCO) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              {/* Columna Izquierda: Mensaje & Argumento Comercial */}
+              {(() => {
+                const list = FIRMAS_DATA.filter(f => f.tipo === firmaTypeSelect);
+
+                const getYearsFromVigencia = (v: string): number => {
+                  if (v === "15 DIAS") return 15 / 365;
+                  if (v.includes("1")) return 1;
+                  if (v.includes("2")) return 2;
+                  if (v.includes("3")) return 3;
+                  if (v.includes("4")) return 4;
+                  if (v.includes("5")) return 5;
+                  return 1;
+                };
+
+                let v1_str = selectedVigencias[0] || "1 AÑO";
+                let v2_str = selectedVigencias[1];
+
+                if (!v2_str || selectedVigencias.length === 1) {
+                  if (v1_str === "1 AÑO") {
+                    v2_str = "2 AÑOS";
+                  } else {
+                    v2_str = "1 AÑO";
+                  }
+                }
+
+                let item1 = list.find(f => f.vigencia === v1_str) || list[0];
+                let item2 = list.find(f => f.vigencia === v2_str) || list.find(f => f.vigencia === "2 AÑOS") || list[0];
+
+                const years1 = getYearsFromVigencia(item1.vigencia);
+                const years2 = getYearsFromVigencia(item2.vigencia);
+
+                let vShorter = years1 <= years2 ? item1 : item2;
+                let vLonger = years1 <= years2 ? item2 : item1;
+
+                if (vShorter.vigencia === vLonger.vigencia) {
+                  const altLonger = list.find(f => f.vigencia === "2 AÑOS") || list[list.length - 1];
+                  if (altLonger && altLonger.vigencia !== vShorter.vigencia) {
+                    vLonger = altLonger;
+                  }
+                }
+
+                const yearsShorter = getYearsFromVigencia(vShorter.vigencia);
+                const yearsLonger = getYearsFromVigencia(vLonger.vigencia);
+
+                const priceShorter = vShorter.precio;
+                const priceLonger = vLonger.precio;
+
+                const diffPrice = Math.max(0, priceLonger - priceShorter);
+                const diffYearsNum = Math.round(Math.max(1, yearsLonger - yearsShorter));
+                const diffYearsText = diffYearsNum === 1 ? "1 año más" : `${diffYearsNum} años más`;
+
+                const annualLonger = priceLonger / (yearsLonger || 1);
+
+                const item1Year = list.find(f => f.vigencia === "1 AÑO") || list[0];
+                const cost1YearRenewal = item1Year.precio * (yearsLonger || 1);
+                const ahorroTotal = Math.max(0, cost1YearRenewal - priceLonger);
+                const pctAhorro = cost1YearRenewal > 0 ? ((ahorroTotal / cost1YearRenewal) * 100).toFixed(0) : "0";
+
+                const isPromoEmprende = firmaTypeSelect === "PROMO EMPRENDE";
+
+                const pitchMsg = isPromoEmprende ? `🔥 *OFERTA RECOMENDADA PROMO EMPRENDE - ANF AC* 📜\n\n• *Opción por ${vShorter.vigencia}:* *$${priceShorter.toFixed(2)} USD*\n\n💡 *OPCIÓN RECOMENDADA por ${vLonger.vigencia}:* *$${priceLonger.toFixed(2)} USD*\n👉 Por solo *$${diffPrice.toFixed(2)} USD adicionales*, obtiene *${diffYearsText}* de vigencia.\n👉 Firma + Facturador a solo *$${annualLonger.toFixed(2)} USD por año*.\n👉 Ahorro total: *$${ahorroTotal.toFixed(2)} USD* (${pctAhorro}% de descuento).\n🎁 *INCLUYE GRATIS:* Facturador Electrónico + Firmador PC + App Celular.\n\n¿Desea emitir su factura con la opción recomendada de *${vLonger.vigencia}*?`
+                : `🔥 *OFERTA RECOMENDADA FIRMA ELECTRÓNICA - ANF AC* 📜\n\n• *Opción por ${vShorter.vigencia}:* *$${priceShorter.toFixed(2)} USD*\n\n💡 *OPCIÓN RECOMENDADA por ${vLonger.vigencia}:* *$${priceLonger.toFixed(2)} USD*\n👉 Por solo *$${diffPrice.toFixed(2)} USD adicionales*, obtiene *${diffYearsText}* de vigencia.\n👉 Su firma le sale a solo *$${annualLonger.toFixed(2)} USD por año*.\n👉 Ahorro total: *$${ahorroTotal.toFixed(2)} USD* (${pctAhorro}% de descuento).\n🎁 *INCLUYE GRATIS:* Firmador PC + App Celular por los ${vLonger.vigencia}.\n\n¿Desea emitir su factura con la opción recomendada de *${vLonger.vigencia}*?`;
+
+                return (
+                  <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/60 border border-amber-300 rounded-2xl p-6 space-y-4 shadow-sm h-full flex flex-col justify-between">
+                    {/* Header bar */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-amber-200/80 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2.5 rounded-xl bg-amber-500 text-slate-950 font-black shadow-xs shrink-0">
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 flex items-center gap-1.5 flex-wrap">
+                            <span>💡 Argumento de Venta Comparativo</span>
+                            <span className="bg-amber-200 text-amber-950 text-xs px-2 py-0.5 rounded-md font-extrabold border border-amber-300">
+                              {vShorter.vigencia} vs {vLonger.vigencia}
+                            </span>
+                          </h4>
+                          <p className="text-xs text-amber-900 font-medium mt-0.5">
+                            {isPromoEmprende 
+                              ? `Por solo +$${diffPrice.toFixed(2)} USD obtiene ${diffYearsText} de Firma + Facturador.`
+                              : `Por solo +$${diffPrice.toFixed(2)} USD obtiene ${diffYearsText} de vigencia.`
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPitch(pitchMsg)}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-black rounded-xl shadow-md transition-all cursor-pointer shrink-0"
+                      >
+                        {copiedPitch ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>¡Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copiar Argumento</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <p className="text-xs text-blue-100 leading-relaxed">
-                      Resguarda y descarga tu archivo fuente de firma electrónica en la nube en cualquier momento, evitando pérdidas por extravío de equipo.
+
+                    {/* Comparative Cards Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">
+                          1️⃣ Opción {vShorter.vigencia}
+                        </span>
+                        <div className="text-base font-black text-slate-900">
+                          ${priceShorter.toFixed(2)} USD
+                        </div>
+                        <span className="text-[10px] text-slate-500 block font-medium">
+                          Inversión base
+                        </span>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-emerald-300 shadow-2xs space-y-1">
+                        <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block">
+                          2️⃣ Opción {vLonger.vigencia}
+                        </span>
+                        <div className="text-base font-black text-emerald-900">
+                          ${priceLonger.toFixed(2)} USD
+                        </div>
+                        <span className="text-[10px] text-emerald-800 block font-bold">
+                          +$${diffPrice.toFixed(2)} ({annualLonger.toFixed(2)}/año)
+                        </span>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white p-3 rounded-xl border border-emerald-800 shadow-sm space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider block text-emerald-200">
+                          💰 Ahorro Total
+                        </span>
+                        <div className="text-base font-black text-white">
+                          ${ahorroTotal.toFixed(2)} USD
+                        </div>
+                        <span className="text-[10px] font-extrabold text-emerald-100 block truncate">
+                          {isPromoEmprende ? "🎁 Facturador gratis" : "🎁 Firmador gratis"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Text Preview Box for Advisor */}
+                    <div className="space-y-1.5 pt-1 flex-1 flex flex-col justify-end">
+                      <span className="text-[11px] font-extrabold text-amber-950 uppercase tracking-wider block">
+                        📋 Vista previa del mensaje directo para el cliente:
+                      </span>
+                      <div className="bg-slate-950 text-amber-200 p-3.5 rounded-xl text-xs font-mono whitespace-pre-wrap leading-relaxed border border-slate-800 h-44 overflow-y-auto select-all shadow-inner">
+                        {pitchMsg}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Columna Derecha: Requisitos de Solicitud */}
+              <div className="bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-md space-y-4 h-full flex flex-col justify-between">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-amber-400 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>Requisitos de Solicitud ({firmaTypeSelect === "PERSONA JURIDICA" ? "Persona Jurídica" : "Persona Natural / RUC / Promo"})</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Envía estos requisitos para la emisión inmediata de la firma electrónica.
                     </p>
                   </div>
 
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 text-orange-400 font-bold text-xs uppercase tracking-wider">
-                      <Key className="w-4 h-4" />
-                      <span>Gestión & Cambio de PIN</span>
-                    </div>
-                    <p className="text-xs text-blue-100 leading-relaxed">
-                      Plataforma intuitiva para gestionar o cambiar la clave PIN de tu firma en forma segura y confidencial sin depender de terceros.
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyRequirements(
+                      firmaTypeSelect === "PERSONA JURIDICA"
+                        ? `Formatos de archivos: Imagen o Pdf. 📂\n\n✅ Cédula o pasaporte ambos lados a color, legible y vigente.\n\n✅ Fotografía sosteniendo la cédula o pasaporte por la parte frontal a la altura de su cuello.\n\n✅ Certificado de Ruc.\n✅ Nombramiento \n✅ Constitución\n✅ Comprobante de pago.\n \nDATOS DEL TITULAR DE LA FIRMA: 📧📲\n\n✅ Correo electrónico personal:\n✅ Correo electrónico de la empresa:\n✅ Celular:\n✅ Dirección de domicilio:\n✅ Provincia de residencia: \n✅ Ciudad de residencia:`
+                        : `Formatos de archivos: Imagen o Pdf. 📂\n\n✅ Cédula o pasaporte, ambos lados, a color, legible y vigente.\n\n✅ Fotografía sosteniendo la cédula o pasaporte por la parte frontal a la altura de su cuello.\n\n✅ Comprobante de pago.\n\n✅ Certificado Ruc.\n \nDatos del titular de la firma electrónica: 📧📲\n\n✅ Correo electrónico personal:\n✅ Celular:\n✅ Dirección de domicilio:\n✅ Provincia de residencia: \n✅ Ciudad de residencia:`
+                    )}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-black rounded-xl shadow-md transition-all cursor-pointer shrink-0"
+                  >
+                    {copiedRequirements ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>¡Copiados!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span>Copiar Requisitos</span>
+                      </>
+                    )}
+                  </button>
+                </div>
 
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 text-orange-400 font-bold text-xs uppercase tracking-wider">
-                      <Smartphone className="w-4 h-4" />
-                      <span>App Móvil para Firmar PDFs</span>
-                    </div>
-                    <p className="text-xs text-blue-100 leading-relaxed">
-                      Firma contratos, facturas y documentos digitales en formato PDF directamente desde tu teléfono inteligente Android o iOS.
-                    </p>
-                  </div>
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs font-mono text-slate-200 leading-relaxed space-y-3 flex-1 overflow-y-auto max-h-[340px]">
+                  {firmaTypeSelect === "PERSONA JURIDICA" ? (
+                    <>
+                      <p className="font-bold text-amber-300">Formatos de archivos: Imagen o Pdf. 📂</p>
+                      <ul className="space-y-1.5 pl-1">
+                        <li>✅ Cédula o pasaporte ambos lados a color, legible y vigente.</li>
+                        <li>✅ Fotografía sosteniendo la cédula o pasaporte por la parte frontal a la altura de su cuello.</li>
+                        <li>✅ Certificado de Ruc.</li>
+                        <li>✅ Nombramiento</li>
+                        <li>✅ Constitución</li>
+                        <li>✅ Comprobante de pago.</li>
+                      </ul>
+                      <p className="font-bold text-amber-300 pt-2 border-t border-slate-800">DATOS DEL TITULAR DE LA FIRMA: 📧📲</p>
+                      <ul className="space-y-1 pl-1 text-slate-300">
+                        <li>✅ Correo electrónico personal:</li>
+                        <li>✅ Correo electrónico de la empresa:</li>
+                        <li>✅ Celular:</li>
+                        <li>✅ Dirección de domicilio:</li>
+                        <li>✅ Provincia de residencia:</li>
+                        <li>✅ Ciudad de residencia:</li>
+                      </ul>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-bold text-amber-300">Formatos de archivos: Imagen o Pdf. 📂</p>
+                      <ul className="space-y-1.5 pl-1">
+                        <li>✅ Cédula o pasaporte, ambos lados, a color, legible y vigente.</li>
+                        <li>✅ Fotografía sosteniendo la cédula o pasaporte por la parte frontal a la altura de su cuello.</li>
+                        <li>✅ Comprobante de pago.</li>
+                        <li>✅ Certificado Ruc.</li>
+                      </ul>
+                      <p className="font-bold text-amber-300 pt-2 border-t border-slate-800">Datos del titular de la firma electrónica: 📧📲</p>
+                      <ul className="space-y-1 pl-1 text-slate-300">
+                        <li>✅ Correo electrónico personal:</li>
+                        <li>✅ Celular:</li>
+                        <li>✅ Dirección de domicilio:</li>
+                        <li>✅ Provincia de residencia:</li>
+                        <li>✅ Ciudad de residencia:</li>
+                      </ul>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Detailed Showcase Cards with Prominent Large Highlight Boxes */}
-            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-md space-y-6">
-              <div className="border-b border-slate-200 pb-4">
-                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-orange-500" />
-                  <span>Detalle Informativo por Tipo de Firma Electrónica</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Información técnica y coberturas de cada modalidad respaldada por ANF AC.
-                </p>
+            {/* TABLA COMPARATIVA DE TIPOS DE FIRMA AT THE BOTTOM */}
+            <div className="pt-6 border-t border-slate-200 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#0B2545]" />
+                  <span>Tabla Comparativa de Modalidades de Firma Electrónica</span>
+                </h3>
+                <span className="text-[11px] text-slate-500 font-medium">Precios finales incluyen el 15% de IVA</span>
               </div>
 
-              {/* Grid of the 4 Signature Types */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* 1. PERSONA NATURAL */}
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-5 shadow-2xs flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0B2545] flex items-center justify-center font-bold shadow-2xs">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900">Persona Natural</h3>
-                          <span className="text-xs text-slate-500 font-medium">Cédula o Pasaporte / Sin RUC</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold bg-blue-100 text-[#0B2545] border border-blue-200 px-3 py-1 rounded-full">
-                        Uso Personal
-                      </span>
-                    </div>
+              <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#0B2545] text-white font-bold uppercase text-[10px] tracking-wider">
+                      <th className="p-3 border-b border-slate-800 text-left">Tipo de Firma</th>
+                      <th className="p-3 border-b border-slate-800 text-left">Dirigido a</th>
+                      <th className="p-3 border-b border-slate-800 text-center">1 Año</th>
+                      <th className="p-3 border-b border-slate-800 text-center">2 Años</th>
+                      <th className="p-3 border-b border-slate-800 text-center">3 Años</th>
+                      <th className="p-3 border-b border-slate-800 text-center">4 Años</th>
+                      <th className="p-3 border-b border-slate-800 text-center">5 Años</th>
+                      <th className="p-3 border-b border-slate-800 text-center">Validez SRI</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {/* Persona Natural */}
+                    <tr className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-extrabold text-slate-900 flex items-center gap-1.5 whitespace-nowrap">
+                        <User className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>Persona Natural</span>
+                      </td>
+                      <td className="p-3 text-slate-600 font-medium min-w-[220px]">Ciudadanos sin RUC para trámites públicos o contratos</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$18.20</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$22.20</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$33.28</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$44.36</td>
+                      <td className="p-3 text-center font-black text-emerald-700 bg-emerald-50/50">$55.41</td>
+                      <td className="p-3 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-bold text-[10px]">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Incluido
+                        </span>
+                      </td>
+                    </tr>
 
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Diseñada para ciudadanos que requieren firmar trámites en instituciones públicas, contratos de arrendamiento, escrituras, declaraciones personales ante el SRI o gestiones legales.
-                    </p>
+                    {/* Persona Natural RUC */}
+                    <tr className="hover:bg-slate-50 transition-colors bg-slate-50/30">
+                      <td className="p-3 font-extrabold text-slate-900 flex items-center gap-1.5 whitespace-nowrap">
+                        <Briefcase className="w-4 h-4 text-orange-500 shrink-0" />
+                        <span>Persona Natural RUC</span>
+                      </td>
+                      <td className="p-3 text-slate-600 font-medium min-w-[220px]">Profesionales independientes, comerciantes y artesanos con RUC</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$18.20</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$22.20</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$33.28</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$44.36</td>
+                      <td className="p-3 text-center font-black text-emerald-700 bg-emerald-50/50">$55.41</td>
+                      <td className="p-3 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-bold text-[10px]">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Incluido
+                        </span>
+                      </td>
+                    </tr>
 
-                    {/* PROMINENT LARGE HIGHLIGHT BOX requested by user */}
-                    <div className="bg-gradient-to-r from-blue-900 to-[#0B2545] text-white p-4 rounded-xl border border-blue-800 shadow-sm space-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-orange-400 block">
-                        BENEFICIOS DESTACADOS INCLUIDOS
-                      </span>
-                      <div className="space-y-1.5 text-sm font-black text-white">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Validez SRI & Comprobantes</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Incluye App + Nube</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Precios ya incluyen IVA</span>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Persona Jurídica */}
+                    <tr className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-extrabold text-slate-900 flex items-center gap-1.5 whitespace-nowrap">
+                        <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
+                        <span>Persona Jurídica</span>
+                      </td>
+                      <td className="p-3 text-slate-600 font-medium min-w-[220px]">Representantes Legales de empresas (S.A.S., Cía Ltda, S.A.)</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$21.84</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$25.84</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$38.22</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$50.93</td>
+                      <td className="p-3 text-center font-black text-purple-700 bg-purple-50/50">$63.12</td>
+                      <td className="p-3 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-bold text-[10px]">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Incluido
+                        </span>
+                      </td>
+                    </tr>
 
-                    {/* Tax-inclusive static price list */}
-                    <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                        Tarifas Finales (IVA Incluido):
-                      </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {[
-                          { vigencia: "15 DÍAS", precio: "$ 6,90" },
-                          { vigencia: "1 AÑO", precio: "$ 18,20" },
-                          { vigencia: "2 AÑOS", precio: "$ 22,20" },
-                          { vigencia: "3 AÑOS", precio: "$ 33,28" },
-                          { vigencia: "4 AÑOS", precio: "$ 44,36" },
-                          { vigencia: "5 AÑOS", precio: "$ 55,41" }
-                        ].map((item) => (
-                          <div key={item.vigencia} className="bg-slate-50 border border-slate-200 p-2 rounded-lg text-center">
-                            <span className="text-[10px] font-bold text-slate-500 block">{item.vigencia}</span>
-                            <span className="text-xs font-black text-slate-900">{item.precio}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-200 text-xs text-slate-500 font-medium flex justify-between items-center">
-                    <span>Formato .p12 / .pfx oficial</span>
-                    <span>ANF Acreditados</span>
-                  </div>
-                </div>
-
-                {/* 2. PERSONA NATURAL CON RUC */}
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-5 shadow-2xs flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold shadow-2xs">
-                          <Briefcase className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900">Persona Natural con RUC</h3>
-                          <span className="text-xs text-slate-500 font-medium">Profesionales & Comerciantes</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 px-3 py-1 rounded-full">
-                        Facturación SRI
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Para profesionales independientes, comerciantes, artesanos y contribuyentes con RUC. Es el requisito oficial para emitir facturas, retenciones y comprobantes en el SRI.
-                    </p>
-
-                    {/* PROMINENT LARGE HIGHLIGHT BOX requested by user */}
-                    <div className="bg-gradient-to-r from-blue-900 to-[#0B2545] text-white p-4 rounded-xl border border-blue-800 shadow-sm space-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-orange-400 block">
-                        BENEFICIOS DESTACADOS INCLUIDOS
-                      </span>
-                      <div className="space-y-1.5 text-sm font-black text-white">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Validez SRI & Comprobantes</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Incluye App + Nube</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Precios ya incluyen IVA</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tax-inclusive static price list */}
-                    <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                        Tarifas Finales (IVA Incluido):
-                      </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {[
-                          { vigencia: "1 AÑO", precio: "$ 18,20" },
-                          { vigencia: "2 AÑOS", precio: "$ 22,20" },
-                          { vigencia: "3 AÑOS", precio: "$ 33,28" },
-                          { vigencia: "4 AÑOS", precio: "$ 44,36" },
-                          { vigencia: "5 AÑOS", precio: "$ 55,41" }
-                        ].map((item) => (
-                          <div key={item.vigencia} className="bg-slate-50 border border-slate-200 p-2 rounded-lg text-center">
-                            <span className="text-[10px] font-bold text-slate-500 block">{item.vigencia}</span>
-                            <span className="text-xs font-black text-slate-900">{item.precio}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-200 text-xs text-slate-500 font-medium flex justify-between items-center">
-                    <span>Formato .p12 / .pfx oficial</span>
-                    <span>ANF Acreditados</span>
-                  </div>
-                </div>
-
-                {/* 3. PERSONA JURÍDICA */}
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-5 shadow-2xs flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold shadow-2xs">
-                          <Building2 className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900">Persona Jurídica</h3>
-                          <span className="text-xs text-slate-500 font-medium">Representantes Legales de Empresa</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-full">
-                        Empresarial
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Otorgada a Representantes Legales, Gerentes o Apoderados de sociedades (S.A.S., Cía. Ltda., S.A.). Certifica la representación empresarial para facturación masiva y trámites corporativos.
-                    </p>
-
-                    {/* PROMINENT LARGE HIGHLIGHT BOX requested by user */}
-                    <div className="bg-gradient-to-r from-blue-900 to-[#0B2545] text-white p-4 rounded-xl border border-blue-800 shadow-sm space-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-orange-400 block">
-                        BENEFICIOS DESTACADOS INCLUIDOS
-                      </span>
-                      <div className="space-y-1.5 text-sm font-black text-white">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Validez SRI & Comprobantes</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Incluye App + Nube</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Precios ya incluyen IVA</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tax-inclusive static price list */}
-                    <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                        Tarifas Finales (IVA Incluido):
-                      </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {[
-                          { vigencia: "1 AÑO", precio: "$ 21,84" },
-                          { vigencia: "2 AÑOS", precio: "$ 25,84" },
-                          { vigencia: "3 AÑOS", precio: "$ 38,22" },
-                          { vigencia: "4 AÑOS", precio: "$ 50,93" },
-                          { vigencia: "5 AÑOS", precio: "$ 63,12" }
-                        ].map((item) => (
-                          <div key={item.vigencia} className="bg-slate-50 border border-slate-200 p-2 rounded-lg text-center">
-                            <span className="text-[10px] font-bold text-slate-500 block">{item.vigencia}</span>
-                            <span className="text-xs font-black text-slate-900">{item.precio}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-200 text-xs text-slate-500 font-medium flex justify-between items-center">
-                    <span>Formato .p12 / .pfx oficial</span>
-                    <span>ANF Acreditados</span>
-                  </div>
-                </div>
-
-                {/* 4. PROMO EMPRENDE */}
-                <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-orange-50 rounded-2xl border border-orange-200 p-6 space-y-5 shadow-2xs flex flex-col justify-between relative overflow-hidden">
-                  <div className="space-y-4 relative z-10">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold shadow-sm">
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold text-slate-900">Promo Emprende</h3>
-                          <span className="text-xs text-orange-800 font-semibold">Paquete Especial Pymes & Startups</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-black bg-orange-500 text-white px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
-                        Paquete Especial
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                      Plan preferencial en alianza con GoDi + ANF AC para emprendedores y nuevos negocios. Incluye emisión prioritaria express y soporte en la vinculación con tu facturación.
-                    </p>
-
-                    {/* PROMINENT LARGE HIGHLIGHT BOX requested by user */}
-                    <div className="bg-gradient-to-r from-blue-900 to-[#0B2545] text-white p-4 rounded-xl border border-blue-800 shadow-sm space-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-orange-400 block">
-                        BENEFICIOS DESTACADOS INCLUIDOS
-                      </span>
-                      <div className="space-y-1.5 text-sm font-black text-white">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Validez SRI & Comprobantes</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Incluye App + Nube</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-orange-400 shrink-0" />
-                          <span>• Precios ya incluyen IVA</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tax-inclusive static price list */}
-                    <div className="bg-white/90 backdrop-blur-sm p-3.5 rounded-xl border border-orange-200 space-y-2">
-                      <span className="text-[11px] font-bold text-orange-950 uppercase tracking-wider block">
-                        Tarifas Promocionales Finales (IVA Incluido):
-                      </span>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { vigencia: "1 AÑO", precio: "$ 24,00" },
-                          { vigencia: "2 AÑOS", precio: "$ 30,00" },
-                          { vigencia: "3 AÑOS", precio: "$ 38,00" }
-                        ].map((item) => (
-                          <div key={item.vigencia} className="bg-orange-50 border border-orange-200 p-2 rounded-lg text-center">
-                            <span className="text-[10px] font-bold text-orange-800 block">{item.vigencia}</span>
-                            <span className="text-xs font-black text-slate-900">{item.precio}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-orange-950 font-medium leading-relaxed pt-2 border-t border-orange-100">
-                        Incluye sistema de facturación UpConta de 70 comprobantes al año, catálogo de productos, servicios y módulo de impuestos.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-orange-200 text-xs text-orange-950 font-bold flex justify-between items-center relative z-10">
-                    <span>Emisión Exprés Prioritaria</span>
-                    <span>UpConta & ANF Acreditados</span>
-                  </div>
-                </div>
-
+                    {/* Promo Emprende */}
+                    <tr className="hover:bg-amber-50/50 transition-colors bg-amber-50/20">
+                      <td className="p-3 font-extrabold text-slate-900 flex items-center gap-1.5 whitespace-nowrap">
+                        <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>Promo Emprende</span>
+                      </td>
+                      <td className="p-3 text-slate-600 font-medium min-w-[220px]">Pymes y emprendedores (Firma + Sistema de Facturación UpConta)</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$24.00</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$30.00</td>
+                      <td className="p-3 text-center font-bold text-slate-900">$38.00</td>
+                      <td className="p-3 text-center text-slate-400 font-semibold">—</td>
+                      <td className="p-3 text-center text-slate-400 font-semibold">—</td>
+                      <td className="p-3 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded font-black text-[10px]">
+                          <Sparkles className="w-3 h-3 text-amber-600" />
+                          Incluye Facturación
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </section>
+            </div>
+
           </div>
         )}
+
+        {/* ========================================================================= */}
+        {/* PESTAÑA: CUENTAS BANCARIAS (ANF AC & UPCONTA S.A.S.) */}
+        {/* ========================================================================= */}
+        {activeTab === "cuentas" && (
+          <div className="space-y-6">
+            
+            {/* Header Banner for Cuentas Bancarias */}
+            <div className="bg-gradient-to-r from-[#0B2545] via-[#003566] to-[#0B2545] text-white p-6 rounded-2xl shadow-md border border-slate-700 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500 text-slate-950 font-black shadow-sm">
+                  <Landmark className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+                    <span>Cuentas Bancarias Oficiales para Depósito o Transferencia</span>
+                  </h2>
+                  <p className="text-xs text-slate-300 font-medium">
+                    Utiliza cualquiera de estas cuentas para realizar el pago de Firmas Electrónicas o Planes UpConta. Copia los datos o la imagen para enviar al cliente por WhatsApp.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid with 2 Cards: ANF AC and UPCONTA S.A.S. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              
+              {/* CARD 1: ANFAC AUTORIDAD DE CERTIFICACIÓN ECUADOR C.A. */}
+              <div className="bg-white border-2 border-amber-300 rounded-2xl p-6 shadow-sm space-y-5 flex flex-col justify-between relative overflow-hidden">
+                <div className="space-y-4">
+                  {/* Card Header with Yellow & Blue theme */}
+                  <div className="bg-[#0B2545] text-white p-4 rounded-xl flex items-center justify-between border border-amber-500/30">
+                    <div>
+                      <h3 className="text-base font-black text-white uppercase tracking-wide flex items-center gap-2">
+                        <span>Datos para pago</span>
+                      </h3>
+                      <span className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider block mt-0.5">
+                        DEPÓSITO O TRANSFERENCIA
+                      </span>
+                    </div>
+                    <span className="bg-amber-400 text-slate-950 font-black text-xs px-2.5 py-1 rounded-lg uppercase shadow-2xs">
+                      ANF AC
+                    </span>
+                  </div>
+
+                  {/* Details List */}
+                  <div className="bg-amber-50/40 p-4 rounded-xl border border-amber-200/60 space-y-2.5 text-xs text-slate-800 font-semibold">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Razón Social:</span>
+                        <span className="font-extrabold text-slate-900 text-sm">ANFAC AUTORIDAD DE CERTIFICACIÓN ECUADOR C.A.</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-amber-200/40">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">RUC:</span>
+                        <span className="font-extrabold text-slate-800">1792601215001</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-amber-200/40">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Banco:</span>
+                        <span className="font-extrabold text-slate-800">Banco Internacional</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-amber-200/40">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Tipo de cuenta:</span>
+                        <span className="font-extrabold text-slate-800">Cuenta Corriente</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-amber-200/40">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Número de Cuenta:</span>
+                        <span className="font-black text-blue-700 text-base">0700626089</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-amber-200/40">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Correo electrónico:</span>
+                        <span className="font-bold text-slate-800">info@anf.ac</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-amber-200/40">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Teléfono:</span>
+                        <span className="font-bold text-slate-800">02 3826877</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-amber-200/40">
+                      <span className="text-amber-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Dirección:</span>
+                        <span className="font-medium text-slate-700 text-xs block leading-tight">
+                          Av. 12 de Octubre N24-739 y av. Colón. Edif. Torre Boreal, Torre A, Piso 6 Of. 603
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Web Footer Pill */}
+                  <div className="bg-[#0B2545] text-amber-400 text-center py-2 px-4 rounded-xl text-xs font-black tracking-wider">
+                    ANFAC AUTORIDAD DE CERTIFICACIÓN ECUADOR C.A. • www.anf.ac
+                  </div>
+                </div>
+
+                {/* Copy Actions */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleCopyBankImage}
+                    className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 border border-amber-400"
+                  >
+                    {copiedBankImage ? (
+                      <>
+                        <Check className="w-4 h-4 text-slate-950" />
+                        <span>¡Imagen Copiada al Portapapeles!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-slate-950" />
+                        <span>Copiar Imagen para Pegar en WhatsApp</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyBankText}
+                    className="w-full py-2 px-4 bg-white hover:bg-slate-100 active:scale-98 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {copiedBankText ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-600" />
+                        <span>¡Texto de Cuenta Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4 text-slate-600" />
+                        <span>Copiar Texto de Cuenta Bancaria</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* CARD 2: UPCONTA S.A.S. */}
+              <div className="bg-white border-2 border-orange-200 rounded-2xl p-6 shadow-sm space-y-5 flex flex-col justify-between relative overflow-hidden">
+                <div className="space-y-4">
+                  {/* Card Header with Orange theme */}
+                  <div className="bg-[#0B2545] text-white p-4 rounded-xl flex items-center justify-between border border-orange-500/30">
+                    <div>
+                      <h3 className="text-base font-black text-white uppercase tracking-wide flex items-center gap-2">
+                        <span>Datos para pago</span>
+                      </h3>
+                      <span className="text-[11px] font-extrabold text-orange-400 uppercase tracking-wider block mt-0.5">
+                        DEPÓSITO O TRANSFERENCIA
+                      </span>
+                    </div>
+                    <span className="bg-orange-500 text-white font-black text-xs px-2.5 py-1 rounded-lg uppercase shadow-2xs">
+                      UPCONTA S.A.S.
+                    </span>
+                  </div>
+
+                  {/* Details List */}
+                  <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-200/60 space-y-2.5 text-xs text-slate-800 font-semibold">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-orange-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Razón Social:</span>
+                        <span className="font-extrabold text-slate-900 text-sm">UPCONTA S.A.S.</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-orange-200/40">
+                      <span className="text-orange-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">RUC:</span>
+                        <span className="font-extrabold text-slate-800">1793221216001</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-orange-200/40">
+                      <span className="text-orange-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Banco:</span>
+                        <span className="font-extrabold text-slate-800">Banco Pichincha</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-orange-200/40">
+                      <span className="text-orange-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Tipo de cuenta:</span>
+                        <span className="font-extrabold text-slate-800">Ahorros</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-orange-200/40">
+                      <span className="text-orange-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Número de Cuenta:</span>
+                        <span className="font-black text-sky-700 text-base">2212935613</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-orange-200/40">
+                      <span className="text-orange-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Correo electrónico:</span>
+                        <span className="font-bold text-slate-800">tesoreria@upconta.com</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-1.5 pt-1.5 border-t border-orange-200/40">
+                      <span className="text-orange-500 font-black">▶</span>
+                      <div>
+                        <span className="text-[11px] text-slate-500 font-bold block">Teléfono:</span>
+                        <span className="font-bold text-slate-800">02 382 6772</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Web Footer Pill */}
+                  <div className="bg-[#0B2545] text-orange-400 text-center py-2 px-4 rounded-xl text-xs font-black tracking-wider">
+                    UPCONTA S.A.S. • www.upconta.com
+                  </div>
+                </div>
+
+                {/* Copy Actions */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleCopyUpContaBankImage}
+                    className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-600 active:scale-98 text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 border border-orange-400"
+                  >
+                    {copiedUpContaBankImage ? (
+                      <>
+                        <Check className="w-4 h-4 text-white" />
+                        <span>¡Imagen Copiada al Portapapeles!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-white" />
+                        <span>Copiar Imagen para Pegar en WhatsApp</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyUpContaBankText}
+                    className="w-full py-2 px-4 bg-white hover:bg-slate-100 active:scale-98 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {copiedUpContaBankText ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-600" />
+                        <span>¡Texto de Cuenta Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4 text-slate-600" />
+                        <span>Copiar Texto de Cuenta Bancaria</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* ==================================== TABS: PLAN CONTADOR ==================================== */}
+        {activeTab === "contador" && <ContadorModule />}
+
+        {/* ==================================== TABS: COMISIONES COMERCIAL ==================================== */}
+        {activeTab === "comision" && <ComisionModule />}
+
+        {/* ==================================== TABS: REGISTRO DE VENTAS ==================================== */}
+        {activeTab === "ventas" && <VentasModule />}
+
+        {/* ==================================== TABS: DASHBOARD METRICAS ==================================== */}
+        {activeTab === "dashboard" && <DashboardModule />}
 
       </main>
 
@@ -3160,7 +3948,11 @@ export default function App() {
             : "#0b2545"
         }
         onSelectColor={(newColor) => {
-          if (colorPickerTarget === "bg") setPdfBgColor(newColor);
+          if (colorPickerTarget === "bg") {
+            setPdfBgColor(newColor);
+            setPdfTitleColor(newColor);
+            setPdfSubtitleColor("#475569");
+          }
           if (colorPickerTarget === "title") setPdfTitleColor(newColor);
           if (colorPickerTarget === "sub") setPdfSubtitleColor(newColor);
         }}
@@ -3176,7 +3968,7 @@ export default function App() {
       {/* Footer Branding section */}
       <footer className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-slate-900 text-center text-slate-500 text-xs">
         <p className="font-light leading-relaxed">
-          GODi Software Co. © 2026. Todos los derechos reservados.
+          GoDi — Plataforma Empresarial © 2026. Todos los derechos reservados.
         </p>
         <p className="text-[10px] text-slate-600 mt-1">
           Las tarifas mostradas incluyen el 15% de IVA aplicable para Ecuador. Los descuentos anuales corresponden al 10% del plan base.

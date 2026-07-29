@@ -5,6 +5,15 @@ export interface Plan {
   tier: string;
   modulos: string[];
   valor?: string;
+  ruc?: number | string;
+  iaasDedicado?: string;
+  perfilEmpresa?: string;
+  capacitacion?: string;
+  migracion?: string;
+  soporte?: string;
+  comprobantes?: string;
+  usuarios?: string;
+  adicionales?: string[];
 }
 
 export const PLANES_DATA: Record<"facturacion" | "erp" | "contador", Plan[]> = {
@@ -28,7 +37,7 @@ export const PLANES_DATA: Record<"facturacion" | "erp" | "contador", Plan[]> = {
     { nombre: "CONTADOR 3 EMPRESA", precio: 100.00, tier: "contador_fijo", modulos: ["3 Empresas", "No incluye comprobantes", "Administrativo", "Impuestos", "Contabilidad"], valor: "3" },
     { nombre: "CONTADOR 6 EMPRESA", precio: 150.00, tier: "contador_fijo", modulos: ["6 Empresas", "No incluye comprobantes", "Administrativo", "Impuestos", "Contabilidad"], valor: "6" },
     { nombre: "CONTADOR 10 EMPRESA", precio: 200.00, tier: "contador_fijo", modulos: ["10 Empresas", "No incluye comprobantes", "Administrativo", "Impuestos", "Contabilidad"], valor: "10" },
-    { nombre: "TAX ILIMITADOS", precio: 100.00, tier: "contador_tax", modulos: ["Tax Ilimitado", "No incluye comprobantes", "Administrativo", "Impuestos"], valor: "tax_ilimitado" },
+    { nombre: "TAX ILIMITADOS", precio: 100.00, tier: "contador_tax", modulos: ["Empresas Ilimitadas", "Tax Ilimitado", "No incluye comprobantes", "Administrativo", "Impuestos"], valor: "tax_ilimitado" },
     { nombre: "CONTADOR ILIMITADO", precio: 300.00, tier: "contador_ilimitado", modulos: ["Empresas Ilimitadas", "No incluye comprobantes", "Administrativo", "Impuestos", "Contabilidad"], valor: "ilimitadas" }
   ]
 };
@@ -42,7 +51,9 @@ export const MODULOS_POR_TIER: Record<string, string[]> = {
   erp_premium: ["ADMINISTRATIVO", "PRODUCCIÓN", "IMPUESTOS", "TESORERÍA", "NÓMINA", "CONTABILIDAD", "ACTIVOS FIJOS", "RESTAURANTES", "CONTINUIDAD", "EMPLEADOS"],
   contador_fijo: ["ADMINISTRATIVO", "IMPUESTOS", "CONTABILIDAD"],
   contador_tax: ["ADMINISTRATIVO", "IMPUESTOS"],
-  contador_ilimitado: ["ADMINISTRATIVO", "IMPUESTOS", "CONTABILIDAD"]
+  contador_ilimitado: ["ADMINISTRATIVO", "IMPUESTOS", "CONTABILIDAD"],
+  cloud_vps: ["ADMINISTRATIVO", "PRODUCCIÓN", "IMPUESTOS", "TESORERÍA", "NÓMINA", "CONTABILIDAD", "ACTIVOS FIJOS", "RESTAURANTES", "CONTINUIDAD", "EMPLEADOS"],
+  cloud_enterprise: ["ADMINISTRATIVO", "PRODUCCIÓN", "IMPUESTOS", "TESORERÍA", "NÓMINA", "CONTABILIDAD", "ACTIVOS FIJOS", "RESTAURANTES", "CONTINUIDAD", "EMPLEADOS"]
 };
 
 export const DETALLE_SUBMODULOS: Record<string, string[]> = {

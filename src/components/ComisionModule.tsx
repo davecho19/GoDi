@@ -15,6 +15,7 @@ import {
   Download,
   Loader2,
   CreditCard,
+  Layers,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -22,14 +23,14 @@ import { GodiOfficialLogo } from "./GodiLogo";
 
 interface ItemComision {
   id: string;
-  categoria: "plan" | "firma";
+  categoria: "plan" | "firma" | "adicional";
   subcategoria?: "facturacion" | "erp" | "contador";
   nombre: string;
   vigencia?: string;
   costoBase: number; // Costo base para firmas
   precioVenta: number; // Precio al que se vende
   cantidad: number;
-  porcentajeComision: number; // 30% para planes, 0 para firmas
+  porcentajeComision: number; // 30% para planes, 0 para firmas, 10% para adicionales
   comisionUnitaria: number; // $ por unidad
   comisionTotal: number; // $ total para el item
 }
@@ -42,6 +43,15 @@ export const FIRMA_BASE_COSTS: Record<string, { costoBase: number; sugerido: num
   "4 Años": { costoBase: 23.8, sugerido: 48.0 },
   "5 Años": { costoBase: 28.17, sugerido: 58.0 },
 };
+
+export const ADICIONALES_PRESETS = [
+  { id: "tesoreria", nombre: "TESORERIA", precio: 75.0 },
+  { id: "nomina", nombre: "NOMINA", precio: 75.0 },
+  { id: "activos_fijos", nombre: "ACTIVOS FIJOS", precio: 75.0 },
+  { id: "restaurantes", nombre: "RESTAURANTES", precio: 75.0 },
+  { id: "contabilidad", nombre: "CONTABILIDAD", precio: 75.0 },
+  { id: "produccion", nombre: "PRODUCCIÓN", precio: 75.0 },
+];
 
 export const PLAN_PRESETS = [
   // Facturación Electrónica
@@ -112,6 +122,11 @@ export function ComisionModule() {
   const [firmaPrecioVenta, setFirmaPrecioVenta] = useState<number>(FIRMA_BASE_COSTS["1 Año"].sugerido);
   const [firmaCantidad, setFirmaCantidad] = useState<number>(1);
 
+  // Form State: Adicional
+  const [selectedAdicional, setSelectedAdicional] = useState(ADICIONALES_PRESETS[0].id);
+  const [adicionalPrecioVenta, setAdicionalPrecioVenta] = useState<number>(ADICIONALES_PRESETS[0].precio);
+  const [adicionalCantidad, setAdicionalCantidad] = useState<number>(1);
+
   // Handle plan preset selection change
   const handlePlanPresetChange = (presetId: string) => {
     setSelectedPlanPreset(presetId);
@@ -134,6 +149,15 @@ export function ComisionModule() {
     const config = FIRMA_BASE_COSTS[vigencia];
     if (config) {
       setFirmaPrecioVenta(config.sugerido);
+    }
+  };
+
+  // Handle adicional preset selection change
+  const handleAdicionalPresetChange = (presetId: string) => {
+    setSelectedAdicional(presetId);
+    const found = ADICIONALES_PRESETS.find((a) => a.id === presetId);
+    if (found) {
+      setAdicionalPrecioVenta(found.precio);
     }
   };
 
@@ -187,6 +211,32 @@ export function ComisionModule() {
     setItems((prev) => [...prev, newItem]);
   };
 
+  // Add Adicional to list
+  const handleAddAdicional = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adicionalPrecioVenta <= 0 || adicionalCantidad <= 0) return;
+
+    const found = ADICIONALES_PRESETS.find((a) => a.id === selectedAdicional);
+    const nombreAdicional = found ? `Módulo Adicional: ${found.nombre}` : "Módulo Adicional";
+
+    const comisionUnitaria = adicionalPrecioVenta * 0.10; // 10% de comisión
+    const comisionTotal = comisionUnitaria * adicionalCantidad;
+
+    const newItem: ItemComision = {
+      id: `adicional-${Date.now()}`,
+      categoria: "adicional",
+      nombre: nombreAdicional,
+      costoBase: 0,
+      precioVenta: Number(adicionalPrecioVenta),
+      cantidad: Number(adicionalCantidad),
+      porcentajeComision: 10,
+      comisionUnitaria,
+      comisionTotal,
+    };
+
+    setItems((prev) => [...prev, newItem]);
+  };
+
   // Update item field directly
   const handleUpdateItem = (id: string, field: "precioVenta" | "cantidad", value: number) => {
     setItems((prev) =>
@@ -198,6 +248,8 @@ export function ComisionModule() {
         let comisionUnitaria = 0;
         if (item.categoria === "plan") {
           comisionUnitaria = newPrecio * 0.3;
+        } else if (item.categoria === "adicional") {
+          comisionUnitaria = newPrecio * 0.1;
         } else {
           comisionUnitaria = newPrecio - item.costoBase;
         }
@@ -234,6 +286,10 @@ export function ComisionModule() {
     .filter((i) => i.categoria === "firma")
     .reduce((acc, curr) => acc + curr.cantidad, 0);
 
+  const totalCantAdicionales = items
+    .filter((i) => i.categoria === "adicional")
+    .reduce((acc, curr) => acc + curr.cantidad, 0);
+
   const totalVentaBruta = items.reduce((acc, curr) => acc + curr.precioVenta * curr.cantidad, 0);
 
   const totalComisionPlanes = items
@@ -244,7 +300,11 @@ export function ComisionModule() {
     .filter((i) => i.categoria === "firma")
     .reduce((acc, curr) => acc + curr.comisionTotal, 0);
 
-  const totalComisionFinal = totalComisionPlanes + totalComisionFirmas;
+  const totalComisionAdicionales = items
+    .filter((i) => i.categoria === "adicional")
+    .reduce((acc, curr) => acc + curr.comisionTotal, 0);
+
+  const totalComisionFinal = totalComisionPlanes + totalComisionFirmas + totalComisionAdicionales;
 
   // PDF Generation State
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -513,8 +573,8 @@ export function ComisionModule() {
         </div>
       </div>
 
-      {/* Two Entry Forms: Planes (30%) & Firmas (Costo Base) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Three Entry Forms: Planes (30%), Firmas (Margen) & Adicionales (10%) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* FORM 1: PLANES DE SISTEMA (30% COMISION - AGRUPADOS) */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
           <div>
@@ -643,7 +703,7 @@ export function ComisionModule() {
                 className="w-full py-2.5 px-4 bg-[#0B2545] hover:bg-[#133E72] text-white font-black rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <Plus className="w-4 h-4 text-emerald-400" />
-                <span>Agregar Plan a Lista de Comisiones</span>
+                <span>Agregar Plan a Lista</span>
               </button>
             </form>
           </div>
@@ -754,7 +814,103 @@ export function ComisionModule() {
                 className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <Plus className="w-4 h-4 text-slate-950" />
-                <span>Agregar Firma a Lista de Comisiones</span>
+                <span>Agregar Firma a Lista</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* FORM 3: MODULOS ADICIONALES (10% COMISION) */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">3. Selección Adicionales</h3>
+                  <p className="text-[11px] font-semibold text-purple-600 flex items-center gap-1">
+                    <Percent className="w-3 h-3" />
+                    <span>10% de comisión sobre el valor ($75 USD)</span>
+                  </p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 bg-purple-100 text-purple-800 text-[10px] font-black rounded-lg uppercase">
+                10% Comisión
+              </span>
+            </div>
+
+            <form onSubmit={handleAddAdicional} className="space-y-4">
+              <div>
+                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                  Módulo Adicional
+                </label>
+                <select
+                  value={selectedAdicional}
+                  onChange={(e) => handleAdicionalPresetChange(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none cursor-pointer"
+                >
+                  {ADICIONALES_PRESETS.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.nombre} — ${a.precio.toFixed(2)} USD
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                    Precio Venta ($)
+                  </label>
+                  <div className="relative">
+                    <span className="text-slate-400 font-bold text-xs absolute left-3 top-1/2 -translate-y-1/2">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="1"
+                      value={adicionalPrecioVenta}
+                      onChange={(e) => setAdicionalPrecioVenta(parseFloat(e.target.value) || 0)}
+                      className="w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                    Cantidad
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={adicionalCantidad}
+                    onChange={(e) => setAdicionalCantidad(parseInt(e.target.value) || 1)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Commission calculation preview */}
+              <div className="bg-purple-50 border border-purple-200/80 rounded-xl p-3 flex items-center justify-between">
+                <div className="text-[11px] font-bold text-purple-900">
+                  <span>Comisión (10% de ${adicionalPrecioVenta.toFixed(2)}):</span>
+                </div>
+                <div className="text-sm font-black text-purple-700">
+                  +${((adicionalPrecioVenta * 0.10) * adicionalCantidad).toFixed(2)} USD
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              >
+                <Plus className="w-4 h-4 text-purple-200" />
+                <span>Agregar Adicional a Lista</span>
               </button>
             </form>
           </div>
@@ -822,6 +978,10 @@ export function ComisionModule() {
                         {item.categoria === "plan" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 font-black text-[10px] rounded-md uppercase">
                             Plan 30%
+                          </span>
+                        ) : item.categoria === "adicional" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 font-black text-[10px] rounded-md uppercase">
+                            Adicional 10%
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[10px] rounded-md uppercase">
@@ -895,6 +1055,11 @@ export function ComisionModule() {
               </div>
 
               <div className="flex justify-between items-center py-1.5 border-b border-slate-800 text-slate-300">
+                <span>Adicionales Vendidos:</span>
+                <span className="font-bold text-white text-sm">{totalCantAdicionales} unidades</span>
+              </div>
+
+              <div className="flex justify-between items-center py-1.5 border-b border-slate-800 text-slate-300">
                 <span>Venta Total Bruta:</span>
                 <span className="font-bold text-white text-sm">${totalVentaBruta.toFixed(2)} USD</span>
               </div>
@@ -902,6 +1067,11 @@ export function ComisionModule() {
               <div className="flex justify-between items-center py-1.5 border-b border-slate-800 text-blue-300">
                 <span>Comisión por Planes (30%):</span>
                 <span className="font-extrabold text-blue-400 text-sm">+${totalComisionPlanes.toFixed(2)} USD</span>
+              </div>
+
+              <div className="flex justify-between items-center py-1.5 border-b border-slate-800 text-purple-300">
+                <span>Comisión por Adicionales (10%):</span>
+                <span className="font-extrabold text-purple-400 text-sm">+${totalComisionAdicionales.toFixed(2)} USD</span>
               </div>
 
               <div className="flex justify-between items-center py-1.5 border-b border-slate-800 text-amber-300">
@@ -1040,7 +1210,7 @@ export function ComisionModule() {
                         {item.nombre} {item.vigencia ? `(${item.vigencia})` : ""}
                       </td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", color: "#475569", fontWeight: "600", fontSize: "10px", textTransform: "uppercase" }}>
-                        {item.categoria === "plan" ? "Plan (30%)" : "Firma (Margen)"}
+                        {item.categoria === "plan" ? "Plan (30%)" : item.categoria === "adicional" ? "Adicional (10%)" : "Firma (Margen)"}
                       </td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center", fontWeight: "bold", color: "#0f172a" }}>{item.cantidad}</td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", color: "#0f172a" }}>${item.precioVenta.toFixed(2)}</td>
@@ -1066,6 +1236,10 @@ export function ComisionModule() {
                 <span style={{ fontWeight: "800", color: "#0f172a", fontSize: "14px" }}>{totalCantFirmas}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #cbd5e1", paddingBottom: "8px", marginBottom: "8px", whiteSpace: "nowrap" }}>
+                <span style={{ color: "#475569", fontWeight: "700" }}>Total Adicionales Vendidos:</span>
+                <span style={{ fontWeight: "800", color: "#0f172a", fontSize: "14px" }}>{totalCantAdicionales}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #cbd5e1", paddingBottom: "8px", marginBottom: "8px", whiteSpace: "nowrap" }}>
                 <span style={{ color: "#475569", fontWeight: "700" }}>Monto Total Vendido:</span>
                 <span style={{ fontWeight: "800", color: "#0f172a", fontSize: "14px" }}>${totalVentaBruta.toFixed(2)} USD</span>
               </div>
@@ -1076,8 +1250,8 @@ export function ComisionModule() {
             </div>
           </div>
 
-          {/* Signatures Spot - Solo Firma del Distribuidor (More space below totals) */}
-          <div style={{ paddingTop: "75px", display: "flex", justifyContent: "center", textAlign: "center", fontSize: "12px" }}>
+          {/* Signatures Spot - Solo Firma del Distribuidor */}
+          <div style={{ paddingTop: "40px", display: "flex", justifyContent: "center", textAlign: "center", fontSize: "12px" }}>
             <div style={{ borderTop: "1px solid #94a3b8", paddingTop: "8px", width: "260px" }}>
               <p style={{ fontWeight: "900", color: "#0f172a", margin: 0, fontSize: "14px" }}>{nombreDistribuidor || "Distribuidor"}</p>
               {cedulaDistribuidor && (
@@ -1085,6 +1259,34 @@ export function ComisionModule() {
               )}
               <p style={{ fontSize: "10px", color: "#64748b", margin: "2px 0 0 0", textTransform: "uppercase" }}>Firma del Distribuidor</p>
             </div>
+          </div>
+
+          {/* Legal Disclaimer / Nota Importante */}
+          <div
+            style={{
+              marginTop: "24px",
+              padding: "14px 18px",
+              backgroundColor: "#f8fafc",
+              border: "1.5px solid #cbd5e1",
+              borderRadius: "8px",
+              fontSize: "12px",
+              color: "#1e293b",
+              lineHeight: "1.45",
+              textAlign: "justify",
+            }}
+          >
+            <p style={{ fontWeight: "900", color: "#0f172a", margin: "0 0 6px 0", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Importante:
+            </p>
+            <p style={{ margin: "0 0 6px 0" }}>
+              Este documento es únicamente de carácter informativo y referencial. No constituye un documento con validez legal, contractual o tributaria, ni representa un compromiso de pago. Asimismo, no tiene relación oficial con UpConta, ANF ni con ninguna de las empresas aliadas.
+            </p>
+            <p style={{ margin: "0 0 6px 0" }}>
+              Su único propósito es servir como herramienta de consulta para que el distribuidor lleve un control interno y referencial de sus comisiones.
+            </p>
+            <p style={{ margin: 0 }}>
+              Queda estrictamente prohibido utilizar o presentar este documento como respaldo para solicitar, exigir o gestionar el cobro de comisiones ante UpConta, ANF o cualquier empresa aliada, con el fin de evitar confusiones, interpretaciones erróneas o inconvenientes administrativos.
+            </p>
           </div>
         </div>
       </div>

@@ -30,7 +30,7 @@ interface ItemComision {
   costoBase: number; // Costo base para firmas
   precioVenta: number; // Precio al que se vende
   cantidad: number;
-  porcentajeComision: number; // 30% para planes, 0 para firmas, 10% para adicionales
+  porcentajeComision: number; // 30% para planes, 0 para firmas, 30% para adicionales
   comisionUnitaria: number; // $ por unidad
   comisionTotal: number; // $ total para el item
 }
@@ -219,7 +219,7 @@ export function ComisionModule() {
     const found = ADICIONALES_PRESETS.find((a) => a.id === selectedAdicional);
     const nombreAdicional = found ? `Módulo Adicional: ${found.nombre}` : "Módulo Adicional";
 
-    const comisionUnitaria = adicionalPrecioVenta * 0.10; // 10% de comisión
+    const comisionUnitaria = adicionalPrecioVenta * 0.30; // 30% de comisión
     const comisionTotal = comisionUnitaria * adicionalCantidad;
 
     const newItem: ItemComision = {
@@ -229,7 +229,7 @@ export function ComisionModule() {
       costoBase: 0,
       precioVenta: Number(adicionalPrecioVenta),
       cantidad: Number(adicionalCantidad),
-      porcentajeComision: 10,
+      porcentajeComision: 30,
       comisionUnitaria,
       comisionTotal,
     };
@@ -249,7 +249,7 @@ export function ComisionModule() {
         if (item.categoria === "plan") {
           comisionUnitaria = newPrecio * 0.3;
         } else if (item.categoria === "adicional") {
-          comisionUnitaria = newPrecio * 0.1;
+          comisionUnitaria = newPrecio * 0.3;
         } else {
           comisionUnitaria = newPrecio - item.costoBase;
         }
@@ -820,7 +820,7 @@ export function ComisionModule() {
           </div>
         </div>
 
-        {/* FORM 3: MODULOS ADICIONALES (10% COMISION) */}
+        {/* FORM 3: MODULOS ADICIONALES (30% COMISION) */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -832,12 +832,12 @@ export function ComisionModule() {
                   <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">3. Selección Adicionales</h3>
                   <p className="text-[11px] font-semibold text-purple-600 flex items-center gap-1">
                     <Percent className="w-3 h-3" />
-                    <span>10% de comisión sobre el valor ($75 USD)</span>
+                    <span>30% de comisión sobre el valor ($75 USD)</span>
                   </p>
                 </div>
               </div>
               <span className="px-2.5 py-1 bg-purple-100 text-purple-800 text-[10px] font-black rounded-lg uppercase">
-                10% Comisión
+                30% Comisión
               </span>
             </div>
 
@@ -898,10 +898,10 @@ export function ComisionModule() {
               {/* Commission calculation preview */}
               <div className="bg-purple-50 border border-purple-200/80 rounded-xl p-3 flex items-center justify-between">
                 <div className="text-[11px] font-bold text-purple-900">
-                  <span>Comisión (10% de ${adicionalPrecioVenta.toFixed(2)}):</span>
+                  <span>Comisión (30% de ${adicionalPrecioVenta.toFixed(2)}):</span>
                 </div>
                 <div className="text-sm font-black text-purple-700">
-                  +${((adicionalPrecioVenta * 0.10) * adicionalCantidad).toFixed(2)} USD
+                  +${((adicionalPrecioVenta * 0.30) * adicionalCantidad).toFixed(2)} USD
                 </div>
               </div>
 
@@ -981,7 +981,7 @@ export function ComisionModule() {
                           </span>
                         ) : item.categoria === "adicional" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 font-black text-[10px] rounded-md uppercase">
-                            Adicional 10%
+                            Adicional 30%
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[10px] rounded-md uppercase">
@@ -1070,7 +1070,7 @@ export function ComisionModule() {
               </div>
 
               <div className="flex justify-between items-center py-1.5 border-b border-slate-800 text-purple-300">
-                <span>Comisión por Adicionales (10%):</span>
+                <span>Comisión por Adicionales (30%):</span>
                 <span className="font-extrabold text-purple-400 text-sm">+${totalComisionAdicionales.toFixed(2)} USD</span>
               </div>
 
@@ -1210,7 +1210,7 @@ export function ComisionModule() {
                         {item.nombre} {item.vigencia ? `(${item.vigencia})` : ""}
                       </td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", color: "#475569", fontWeight: "600", fontSize: "10px", textTransform: "uppercase" }}>
-                        {item.categoria === "plan" ? "Plan (30%)" : item.categoria === "adicional" ? "Adicional (10%)" : "Firma (Margen)"}
+                        {item.categoria === "plan" ? "Plan (30%)" : item.categoria === "adicional" ? "Adicional (30%)" : "Firma (Margen)"}
                       </td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "center", fontWeight: "bold", color: "#0f172a" }}>{item.cantidad}</td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right", color: "#0f172a" }}>${item.precioVenta.toFixed(2)}</td>
